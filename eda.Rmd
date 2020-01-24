@@ -52,11 +52,11 @@ img = readJPEG("New_York_City_.jpg")
 
 
 ggplot(dat, aes(x=neighbourhood_group)) +
-  geom_bar()
+  geom_bar(aes(fill=neighbourhood_group))
 
 jet.colors <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
 
-ggplot(dat, aes(x=longitude, y = latitude, color = log(price)))+
+ggplot(dat, aes(x=longitude, y = latitude, color = log(1+price)))+
   annotation_custom(rasterGrob(img, 
                                width = unit(1,"npc"), 
                                height = unit(1,"npc")), 
@@ -86,6 +86,34 @@ ggplot(dat, aes(x=longitude, y = latitude, color = neighbourhood_group))+
 
 ```
 
+```{r}
+ggplot(dat, aes(x=neighbourhood_group, y = log(1+price), fill = neighbourhood_group))+
+  geom_violin() + 
+  ggtitle('Neighbourhood group: price KDE')
+
+ggplot(dat, aes(x=neighbourhood_group, y = availability_365, fill = neighbourhood_group))+
+  geom_violin() + 
+  ggtitle('Neighbourhood group: availability KDE')
+
+```
+
+
+```{r}
+ggplot(dat, aes(x = neighbourhood_group))+
+  geom_bar(aes(fill = room_type), position='dodge')+
+  ggtitle("Neighbourhood group: room type")
+
+```
+
+
+
+```{r}
+Names = paste(dat$name[1:2], collapse = " ")
+Names = gsub("&", "", Names)
+Names = gsub(":", "", Names)
+Names = gsub(",", "", Names)
+
+```
 
 
 
