@@ -1,0 +1,89 @@
+---
+title: "EDA"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r cars}
+dat = read.csv('AB_NYC_2019.csv', na.strings = c("", "NA"))
+
+library(purrr)
+library(tidyr)
+library(ggplot2)
+
+dat %>%
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free") +
+    geom_histogram()
+
+```
+
+
+```{r}
+lapply(dat, class)
+
+```
+
+## Missing Data Manipulation
+
+```{r}
+apply(dat, 2, function(x)(sum(is.na(x))))
+dat = dat[, !names(dat) %in% c('id', 'host_name','last_review')]
+dat$reviews_per_month[is.na(dat$reviews_per_month)] = 0
+apply(dat, 2, function(x)(sum(is.na(x))))
+```
+
+## EDA plots
+
+```{r}
+
+library(jpeg)
+library(ggpubr)
+library(grid)
+
+img = readJPEG("New_York_City_.jpg")
+
+
+ggplot(dat, aes(x=neighbourhood_group)) +
+  geom_bar()
+
+jet.colors <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
+
+ggplot(dat, aes(x=longitude, y = latitude, color = log(price)))+
+  annotation_custom(rasterGrob(img, 
+                               width = unit(1,"npc"), 
+                               height = unit(1,"npc")), 
+                    -74.258, -73.69, 40.49,40.92) + 
+  geom_point(cex = 0.4) +
+  scale_colour_gradientn(colors = jet.colors(7), limits = c(3,7)) 
+
+
+ggplot(dat, aes(x=longitude, y = latitude, color = availability_365))+
+  annotation_custom(rasterGrob(img, 
+                               width = unit(1,"npc"), 
+                               height = unit(1,"npc")), 
+                    -74.258, -73.69, 40.49,40.92) + 
+  geom_point(cex = 0.4) +
+  scale_colour_gradient(low = 'red', high = 'grey') 
+```
+
+
+
+```{r}
+ggplot(dat, aes(x=longitude, y = latitude, color = neighbourhood_group))+
+  annotation_custom(rasterGrob(img, 
+                               width = unit(1,"npc"), 
+                               height = unit(1,"npc")), 
+                    -74.258, -73.69, 40.49,40.92) + 
+  geom_point(cex = 0.4) 
+
+```
+
+
+
+
