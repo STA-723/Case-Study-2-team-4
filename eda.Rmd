@@ -1,13 +1,16 @@
 ---
-title: "EDA"
-output:
-  pdf_document: default
-  html_document: default
+title: "EDA. Case Study 2 - Group 4"
+author: "Keru Wu"
+output: pdf_document
+toc: true
+number_sections: true
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+# 1. Load Data
 
 ```{r cars}
 dat = read.csv('AB_NYC_2019.csv', na.strings = c("", "NA"))
@@ -31,7 +34,7 @@ lapply(dat, class)
 
 ```
 
-## Missing Data Manipulation
+# 2. Missing Data Manipulation
 
 ```{r}
 apply(dat, 2, function(x)(sum(is.na(x))))
@@ -40,7 +43,7 @@ dat$reviews_per_month[is.na(dat$reviews_per_month)] = 0
 apply(dat, 2, function(x)(sum(is.na(x))))
 ```
 
-## EDA plots
+# 3. EDA plots
 
 ```{r}
 
@@ -49,10 +52,22 @@ library(ggpubr)
 library(grid)
 
 img = readJPEG("New_York_City_.jpg")
+```
 
 
+## 3.1 Neighbourhood Count
+
+```{r}
 ggplot(dat, aes(x=neighbourhood_group)) +
   geom_bar(aes(fill=neighbourhood_group))
+
+ggplot(dat, aes(x=neighbourhood)) +
+  geom_bar(aes(fill=neighbourhood), show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size=5))
+```
+
+## 3.2 Maps
+```{r}
 
 jet.colors <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
 
@@ -75,7 +90,6 @@ ggplot(dat, aes(x=longitude, y = latitude, color = availability_365))+
 ```
 
 
-
 ```{r}
 ggplot(dat, aes(x=longitude, y = latitude, color = neighbourhood_group))+
   annotation_custom(rasterGrob(img, 
@@ -85,6 +99,8 @@ ggplot(dat, aes(x=longitude, y = latitude, color = neighbourhood_group))+
   geom_point(cex = 0.4) 
 
 ```
+
+## 3.3 Neighbourhood Group
 
 ```{r}
 ggplot(dat, aes(x=neighbourhood_group, y = log(1+price), fill = neighbourhood_group))+
@@ -106,14 +122,41 @@ ggplot(dat, aes(x = neighbourhood_group))+
 ```
 
 
-
+## 3.4 Number of Reviews
 ```{r}
-Names = paste(dat$name[1:2], collapse = " ")
-Names = gsub("&", "", Names)
-Names = gsub(":", "", Names)
-Names = gsub(",", "", Names)
+dat1 <- dat[with(dat,order(-number_of_reviews)),]
+
+dat1[1:10,]
+
 
 ```
 
 
+# 4. Word Count
+```{r}
+Names = paste(dat$name, collapse = " ")
+Names = strsplit(Names, " ")[[1]]
+Names = table(Names)
+
+library(dplyr)
+freq = Names %>% as.data.frame() %>% arrange(desc(Freq))
+
+ggplot(freq[1:30,], aes(x = reorder(Names, -Freq), y = Freq))+
+  geom_bar(stat = "identity", aes(fill = Names), show.legend = FALSE)+ 
+  xlab("Word")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size=10))
+
+```
+
+# 5. 
+
+# 5. Regression
+
+## 5.1 Linear Regression
+
+## 5.2 LASSO
+
+## 5.3 Decision Tree \& Random Forest
+
+## 5.4 
 
