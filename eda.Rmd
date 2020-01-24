@@ -148,8 +148,6 @@ ggplot(freq[1:30,], aes(x = reorder(Names, -Freq), y = Freq))+
 
 ```
 
-# 5. 
-
 # 5. Regression
 
 ## 5.1 Linear Regression
