@@ -122,7 +122,31 @@ ggplot(dat, aes(x = neighbourhood_group))+
 ```
 
 
-## 3.4 Number of Reviews
+## 3.4 Neighbourhood
+
+
+```{r}
+ggplot(dat, aes(x=neighbourhood_group, y = log(1+price), fill = neighbourhood))+
+  geom_boxplot(show.legend = FALSE, outlier.size=0.2, lwd=0.2) + 
+  ggtitle('Neighbourhood: price boxplot')
+
+ggplot(dat, aes(x=neighbourhood_group, y = availability_365, fill = neighbourhood))+
+  geom_boxplot(show.legend = FALSE, outlier.size=0.2, lwd=0.2) + 
+  ggtitle('Neighbourhood: availability boxplot')
+
+```
+
+
+```{r}
+ggplot(dat, aes(x = neighbourhood))+
+  geom_bar(aes(fill = room_type), show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size=5))+
+  ggtitle("Neighbourhood: room type")
+
+```
+
+
+## 3.5 Number of Reviews
 ```{r}
 dat1 <- dat[with(dat,order(-number_of_reviews)),]
 
@@ -150,11 +174,41 @@ ggplot(freq[1:30,], aes(x = reorder(Names, -Freq), y = Freq))+
 
 # 5. Regression
 
+## 5.0 Train Test
+
+```{r}
+dat = dat %>% mutate(id = row_number())
+train = dat %>% sample_frac(.7)
+test  <- anti_join(dat, train, by = 'id') 
+```
+
 ## 5.1 Linear Regression
+
+```{r}
+
+```
+
+
+
 
 ## 5.2 LASSO
 
-## 5.3 Decision Tree \& Random Forest
+## 5.3 GAM
 
-## 5.4 
+## 5.4 Decision Tree \& Random Forest
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
 
