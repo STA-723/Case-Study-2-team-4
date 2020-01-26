@@ -25,6 +25,7 @@ library(stringr)
 
 ```{r}
 data = read.csv('AB_NYC_2019.csv', na.strings = c("", "NA"))
+dat=data
 gg_miss_upset(dat)
 nrow(dat)
 ```
@@ -40,7 +41,7 @@ nrow(dat)
 ```{r}
 dat=data%>%mutate(avail_0=if_else(availability_365==0,TRUE,FALSE))
 dat=dat%>%mutate(term=if_else(minimum_nights<=7,"short",if_else(minimum_nights<=45,"middle","long")))
-dat%>%filter(minimum_nights>3,availability_365==0,number_of_reviews==0)
+#dat%>%filter(minimum_nights>3,availability_365==0,number_of_reviews==0)
 
 ggplot(data=dat,aes(x=log(price),fill=avail_0))+geom_density(alpha=0.5)
 ggplot(data=dat,aes(x=log(1+number_of_reviews),fill=avail_0))+geom_density(alpha=0.5)
@@ -70,7 +71,7 @@ dat%>%ggplot(data=.,aes(x=neighbourhood,y=log(price)))+geom_boxplot()
 dat%>%ggplot(data=.,aes(x=neighbourhood_group,y=log(price)))+geom_boxplot()
 dat%>%ggplot(data=.,aes(x=neighbourhood,fill=neighbourhood_group))+geom_bar()
 dat%>%ggplot(data=.,aes(x=neighbourhood_group,fill=neighbourhood_group))+geom_bar()
-dat%>%group_by(neighbourhood_group,neighbourhood)%>%summarise(count=n())%>%arrange(desc(count))
+dat%>%group_by(neighbourhood_group,neighbourhood)%>%summarise(count=n())%>%arrange(desc(count))%>%head(5)
 ```
 
 ## room type
@@ -82,17 +83,15 @@ dat%>%ggplot(data=.)+geom_mosaic(aes(x=product(room_type,neighbourhood_group),fi
 
 ## maps
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 library("ggmap")
 ny.map=get_map(location = c(left=-74.2445,right=-73.71298, bottom= 40.49975,top=40.9131),color = "bw",maptype = "toner",source = "stamen")
-plot(ny.map)
 ggmap(ny.map)+
   stat_density2d(data = dat,
                  aes(x = longitude, y = latitude,fill = ..level.., alpha = ..level..), 
                  geom = "polygon") + 
-  scale_fill_gradient(low = "yellow", high = "red") + 
+  scale_fill_gradient(low = "green", high = "red") + 
   scale_alpha(range = c(0, 0.75), guide = FALSE)
-plot(ny.map)
 
 img = readJPEG("New_York_City_.jpg")
 jet.colors <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
