@@ -1,0 +1,101 @@
+---
+title: "Case Study 2 EDA"
+author: "Frances Hung"
+date: "1/24/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(gridExtra)
+library(tidyr)
+```
+
+
+```{r read-in}
+AB<-read.csv("AB_NYC_2019.csv") %>% filter(grepl("2018",last_review)==TRUE)
+colMeans(is.na(AB))
+```
+
+The only category with missing data is the reviews per month variable. There doesn't seem to be an obvious pattern to the missingness; the neighborhoods with more missing data are the neighborhoods which have more listings AND there is no missing data if the date of the last review is recent (i.e. more than 2018). We're interested in current trends anyways, so we can get rid of data where the last review is before 2018.
+
+```{r}
+# AB %>% filter(reviews_per_month %>% is.na()) %>% group_by(neighbourhood) %>% summarise(count=n(),med_price=median(price)) %>% arrange(desc(count))
+
+AB %>% group_by(neighbourhood) %>% summarise(count=n(),med_price=median(price)) %>% arrange(desc(count))
+# AB %>%
+#   group_by(neighbourhood) %>%
+#   summarise(n = count(is.na(reviews_per_month))) %>%
+#   mutate(freq = n / sum(n))
+
+# AB %>% group_by(neighbourhood) %>% group_by(neighbourhood) %>% summarise(y=count(is.na(reviews_per_month)))
+```
+
+
+## Including Plots
+
+
+```{r}
+ggplot(AB,aes(x=neighbourhood_group))+
+  geom_histogram(stat = "count") + 
+  facet_wrap(.~room_type,scale="free") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+AB_w_couples<-AB %>% mutate(couples=ifelse(grepl("and |AND |And | \\& ",host_name),1,0))
+```
+
+Leased entire houses/apartments are the most common room type Airbnb offers in Manhattan, while in Brooklyn where living space tends to be larger, private rooms are also common offer. Queens offers mostly private rooms. 
+
+The median price of housing listed under couples is about the same as those listed under singles.
+
+```{r,fig.height=10,fig.width=10}
+AB_w_couples %>% 
+  group_by(neighbourhood) %>%
+  summarise(median_price=median(price), q25=quantile(price,.25),q75=quantile(price,.75),count=n()) %>%
+  arrange(desc(median_price)) %>%
+  filter(count>50)
+
+most_pop_neighborhoods<-AB %>% drop_na() %>% group_by(neighbourhood) %>%
+  summarise(num_reviews=sum(number_of_reviews),med_price=median(price),med_rvws_month=median(reviews_per_month),district=neighbourhood_group[1],available=median(availability_365)) %>% 
+  filter(num_reviews>2000)
+
+total_rvws_plot<-most_pop_neighborhoods %>% ggplot(aes(x=num_reviews,y=med_price))+geom_point()+
+  geom_text(data=subset(most_pop_neighborhoods, num_reviews>quantile(num_reviews,.9) | med_price>150),aes(num_reviews, med_price, label=neighbourhood))
+
+per_month_rvws_plot<-most_pop_neighborhoods %>% ggplot(aes(x=med_rvws_month,y=med_price))+geom_point()+
+  geom_text(data=subset(most_pop_neighborhoods, med_rvws_month>quantile(med_rvws_month,.9) | med_price>150),aes(med_rvws_month, med_price, label=neighbourhood))
+
+grid.arrange(total_rvws_plot,per_month_rvws_plot,ncol=2)
+
+most_pop_neighborhoods %>% filter(num_reviews>quantile(num_reviews,.9)) 
+most_pop_neighborhoods %>% filter(med_rvws_month>quantile(med_rvws_month,.9))
+
+```
+
+There seems to be a correlation between number of reviews per month and number of reviews, but it is not absolute. Perhaps the reviews per month is more indicative of up-and-coming neighborhoods than the total number (which may include Airbnbs which have been on the market for a long time). Looking at the total number of reviews versus median reviews per month, we can see that we have expensive rentals with relatively low numbers of reviews; these also unsurprisingly correspond to low numbers of reviews per month. 
+
+Things get interesting when we look at the neighborhoods with most total number of reviews (mostly in Brooklyn and Manhattan) and neighborhoods with the most reviews per month (mostly in Queens). 
+
+Manhattan/Brooklyn has quite a few renters who usually have available full-apartment space to rent for two or three months every year; we'd assume that they are likely people who rent out the spaces they live in while they're on vacation. Queens has quite a few renters who are renting private rooms or full apartments for a much larger portion of the year for cheaper; they probably have designated rooms for renting out. 
+now does days available correspond to types of rooms? 
+maybe a better profit metric is dollars per review per day available.
+
+This is a hierarchical model: important metrics seem to be neighborhood_group, possibly the metric described above,
+
+```{r}
+
+```
+
