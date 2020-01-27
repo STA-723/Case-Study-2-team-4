@@ -181,9 +181,10 @@ dat.sf=st_as_sf(dat,coords = c("longitude","latitude"))
 st_crs(dat.sf)=st_crs(p)
 dat.p.int=st_intersects(dat.sf,p)
 res_dat=st_join(dat.sf,p,join=st_intersects)
-#save(res_dat,file="resultdataset.rdata")
+save(res_dat,p,file="resultdataset.rdata")
 plot(select(res_dat,ntaname))
 ```
 
 
 
+Shape file come from : https://data.cityofnewyork.us/City-Government/Neighborhood-Tabulation-Areas-NTA-/cpf4-rkhq
