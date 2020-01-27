@@ -28,17 +28,28 @@ data = read.csv('AB_NYC_2019.csv', na.strings = c("", "NA"))
 dat=data
 gg_miss_upset(dat)
 nrow(dat)
+dat%>%filter(is.na(reviews_per_month),number_of_reviews!=0)
+
 ```
 
 - can exist diff listing same host.
-- `availability` cannot be used as a measurement for popularity; what does it mean? -> use # of reviews
-- delete the one price==0
+- `availability` cannot be used as a measurement for popularity 35% 0's; what does it mean? -> use # of reviews / avg per month
+- delete the one price==0 (11)
 - term: short-term, middle-term, long-term: minimum night<=7 or 30 ? -> cut the minimum night - not linear for sure
 - 0-inflation of number of reviews
 
 ## availability
 
 ```{r}
+install.packages("lubridate")
+
+library("lubridate")
+dat%>%filter(availability_365==0)%>%pull(last_review)%>%as.character()%>%date()%>%hist()
+dat
+dat%>%filter(price==0)%>%nrow()
+dat$host_id%>%unique()%>%length()
+nrow(dat)
+17533/nrow(dat)
 dat=data%>%mutate(avail_0=if_else(availability_365==0,TRUE,FALSE))
 dat=dat%>%mutate(term=if_else(minimum_nights<=7,"short",if_else(minimum_nights<=45,"middle","long")))
 #dat%>%filter(minimum_nights>3,availability_365==0,number_of_reviews==0)
@@ -69,6 +80,8 @@ order_nei=dat%>%group_by(neighbourhood_group,neighbourhood)%>%summarise()%>%pull
 dat=dat%>%mutate(neighbourhood=factor(neighbourhood,levels = order_nei))
 dat%>%ggplot(data=.,aes(x=neighbourhood,y=log(price)))+geom_boxplot()
 dat%>%ggplot(data=.,aes(x=neighbourhood_group,y=log(price)))+geom_boxplot()
+dat%>%ggplot(data=.,aes(fill=neighbourhood_group,x=log(1+reviews_per_month)))+geom_density(alpha=0.5)
+w
 dat%>%ggplot(data=.,aes(x=neighbourhood,fill=neighbourhood_group))+geom_bar()
 dat%>%ggplot(data=.,aes(x=neighbourhood_group,fill=neighbourhood_group))+geom_bar()
 dat%>%group_by(neighbourhood_group,neighbourhood)%>%summarise(count=n())%>%arrange(desc(count))%>%head(5)
@@ -155,6 +168,22 @@ https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3074178/pdf/nihms237255.pdf
 https://www.google.com/search?q=spatial+prior+hierachical+model+r+package&oq=spatial+prior+hierachical+model+r+package&aqs=chrome..69i57.16517j0j7&sourceid=chrome&ie=UTF-8
 
 pkg: HSAR, spBayes, CARBayes
+
+```{r}
+library("sf")
+p=st_read("/Users/yunranchen/GoDuke/20Spring/STAT723CaseStudy/Case-Study-2-team-4/Neighborhood Tabulation Areas (NTA)/geo_export_c2bca37b-2a5a-4129-9a53-1ca377d98cb8.shp",quiet=TRUE)%>%tbl_df() %>% st_sf()
+plot(select(p,ntacode))
+# adjacency matrix of neighbourhoods
+adj = st_touches(p, sparse=FALSE)
+corrplot::corrplot(adj,method="color",type="full",tl.col="black",cl.pos = "n",)
+# merge two dataset based on lat and long
+dat.sf=st_as_sf(dat,coords = c("longitude","latitude"))
+st_crs(dat.sf)=st_crs(p)
+dat.p.int=st_intersects(dat.sf,p)
+res_dat=st_join(dat.sf,p,join=st_intersects)
+#save(res_dat,file="resultdataset.rdata")
+plot(select(res_dat,ntaname))
+```
 
 
 
