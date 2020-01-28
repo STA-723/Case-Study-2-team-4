@@ -243,7 +243,13 @@ adjj = adj2[-c(1,72,135,149), -c(1,72,135,149)]
 
 
 dat$availability_365 = scale(dat$availability_365)
-dat$minimum_nights[dat$minimum_nights>31] = 31
+
+dat$minimum_nights[dat$minimum_nights<3] = 0
+dat$minimum_nights[dat$minimum_nights>=3 & dat$minimum_nights<7] = 1
+dat$minimum_nights[dat$minimum_nights>=7 & dat$minimum_nights<14] = 2
+dat$minimum_nights[dat$minimum_nights>=14 & dat$minimum_nights<21] = 3
+dat$minimum_nights[dat$minimum_nights>=21 & dat$minimum_nights<28] = 4
+dat$minimum_nights[dat$minimum_nights>=28] = 5
 dat$minimum_nights = as.factor(dat$minimum_nights)
 
 library(CARBayes)
@@ -251,13 +257,9 @@ s =S.CARmultilevel(formula=log(price) ~ room_type + neighbourhood_group + log(1+
                 family = 'gaussian', data = dat, ind.area=dat$ind_area,
                 W=adjj, burnin=500, n.sample=1000)
 
-s =S.CARmultilevel(formula=log(price) ~ room_type + neighbourhood_group + log(1+reviews_per_month) + availability_365,
-                family = 'gaussian', data = dat, ind.area=dat$ind_area,
-                W=adjj, burnin=500, n.sample=1000)
+s2 =S.CARmultilevel(formula=log(price) ~ room_type + log(1+reviews_per_month) + availability_365 + minimum_nights,family = 'gaussian', data = dat, ind.area=dat$ind_area,W=adjj, burnin=500, n.sample=1000)
 
-s2 =S.CARmultilevel(formula=log(price) ~ room_type + log(1+reviews_per_month) + availability_365,family = 'gaussian', data = dat, ind.area=dat$ind_area,W=adjj, burnin=200, n.sample=500)
-
-s3 = S.CARmultilevel(formula = log(1+reviews_per_month) ~ room_type + log(price) + availability_365,family = 'gaussian', data = dat, ind.area=dat$ind_area,W=adjj, burnin=200, n.sample=500)
+#s3 = S.CARmultilevel(formula = log(1+reviews_per_month) ~ room_type + log(price) + availability_365 + minimum_nights,family = 'gaussian', data = dat, ind.area=dat$ind_area,W=adjj, burnin=500, n.sample=1000)
 
 ss = s2$samples
 
@@ -282,7 +284,7 @@ phidf$borough[phidf$key %in% Bky] = 'Brooklyn'
 library(ggplot2)
 ggplot(phidf, aes(x = borough, y = value, fill = key))+
   geom_boxplot(show.legend = FALSE)+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, size=5))
+  theme(axis.text.x = element_text(hjust = 1, size=10))
 
 
 
