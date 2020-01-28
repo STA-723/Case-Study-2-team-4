@@ -22,15 +22,91 @@ library(ggplot2)
 library(dplyr)
 library(gridExtra)
 library(tidyr)
+library(lme4)
 ```
+-delete price=0 (11 observations)
+- impute availability_365
+-make min length of stay categorical (long, med, short) 
+-interaction with room type and neighborhood
+-add new variable: length of name (optional)
+-log reviews-per-month and price (log (1+variable))
+-impute reviews-per-month as 0 if NA (corresponds to number of reviews is 0)
+-FOR NOW: linear minimum length of stay (may later change to categorical)
+-availability-0 check what this means!! 
 
 
 ```{r read-in}
-AB<-read.csv("AB_NYC_2019.csv") %>% filter(grepl("2018",last_review)==TRUE)
+AB<-read.csv("AB_NYC_2019.csv") %>% 
+  filter(price!=0) %>%
+  mutate(reviews_per_month=replace_na(reviews_per_month,0)) %>%
+  mutate(reviews_per_month=log(1+reviews_per_month),price=log(1+price)) 
 colMeans(is.na(AB))
 ```
 
+```{r}
+AB_net_gain<-AB %>%
+  mutate(net_gain=log(1+price*reviews_per_month))
+
+ggplot(AB_net_gain,aes(x=net_gain))+geom_histogram()
+```
+
+
+## Linear Models)
+
+```{r}
+m1<-lmer(price ~ (1|neighbourhood_group)+minimum_nights+reviews_per_month+room_type*neighbourhood_group,data=AB,REML=TRUE)
+summary(m1)
+AIC(m1)
+```
+
+From this model, we can infer that price is negatively correlated with reviews per month, whether the room is private or shared (especially in Brooklyn), and increased minimum nights. This fits the narrative that the most expensive rentals tend to be whole-apartment/house rentals catering to wealthy short-term vacationers. The neighbourhood groups/neighbourhoods don't seem to have that much variance in base price as an intercept (probably only a very select few do).
+
+```{r}
+m2<-lm(reviews_per_month ~ minimum_nights+price+room_type+neighbourhood_group,data=AB)
+summary(m2)
+AIC(m2)
+confint(m2)
+
+```
+
+From a naive lm model with no random effects, we infer that popularity (reviews per month) is negatively correlated with minimum nights and price. The other variables are not well estimated, probably because the popularity between districts varies enough to make a difference.
+
+
+
+```{r}
+m4<-lmer(reviews_per_month ~ minimum_nights+price+(1|neighbourhood)+(0+room_type|neighbourhood_group),data=AB,REML=FALSE)
+summary(m4)
+AIC(m4)
+```
+
+This one-level hierarchical model is better as it takes into account differences across neighborhoods. I tried doing a 2 level with neighbourhood and neighborhood group but the model did not converge.
+
+```{r}
+m3<-lmer(reviews_per_month ~ minimum_nights+price+(1|neighbourhood)+(1|room_type),data=AB,REML=FALSE)
+summary(m3)
+AIC(m3)
+```
+
+## Linear models predicting net gain
+
+```{r}
+m4<-lmer(net_gain ~ minimum_nights+(1|neighbourhood)+room_type+availability_365,data=AB_net_gain,REML=FALSE)
+summary(m4)
+AIC(m4)
+```
+
+We have a very small AIC for this model; it shows that the net gain (price times popularity) is negatively correlated to minimum nights and positively correlated to reviews per month. We have to keep in mind the dependent variable is only an accurate representation for fitting short-term rental profit (a long-term Airbnb may make a lot off of one person staying there for a year, and who only posts 1 review).
+
+```{r}
+m4<-lmer(net_gain ~ minimum_nights+price+reviews_per_month+(1|neighbourhood)+neighbourhood_group+room_type,data=AB_net_gain,REML=FALSE)
+summary(m4)
+AIC(m4)
+```
+
+
 The only category with missing data is the reviews per month variable. There doesn't seem to be an obvious pattern to the missingness; the neighborhoods with more missing data are the neighborhoods which have more listings AND there is no missing data if the date of the last review is recent (i.e. more than 2018). We're interested in current trends anyways, so we can get rid of data where the last review is before 2018.
+
+
 
 ```{r}
 # AB %>% filter(reviews_per_month %>% is.na()) %>% group_by(neighbourhood) %>% summarise(count=n(),med_price=median(price)) %>% arrange(desc(count))
