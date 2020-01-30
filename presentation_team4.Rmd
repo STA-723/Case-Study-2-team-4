@@ -1,0 +1,214 @@
+---
+title: "Patterns among Airbnb Listings in NYC"
+author: "Frances Hung, Yunran Chen, Keru Wu"
+output: beamer_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.height = 5)
+library(corrplot)
+library(naniar)
+library(ggplot2)
+library(dplyr)
+library(tibble)
+library(tidyr)
+library(purrr)
+library(lme4)
+library(jpeg)
+library(ggpubr)
+library(grid)
+library(stringr)
+library("ggmap")
+library(ggmosaic)
+```
+
+```{r pre, include=FALSE}
+data = read.csv('AB_NYC_2019.csv', na.strings = c("", "NA"))
+dat=data%>%filter(price!=0)
+dat$reviews_per_month[dat$number_of_reviews==0]=0
+```
+
+## Introduction
+
+- Data:  2019 Airbnb listings in NYC, 48895 observations.
+- Goal: Identify discernible and interesting patterns among the listings in NYC.
+  - Patterns for price/popularity: influential factors? quantify influence?
+    - Patterns for locations: heterogeneity across boroughs/neighborhoods?
+    - Patterns for the type of the listings: vary across neighborhoods?
+    - Patterns for listings names:
+  - Rank the boroughs/neighborhoods based on price/popularity/traffic
+  - Post a listing: choice of location and name
+- Model: CARBayes for `log(price)` and `log(1+reviews_per_month)` respectively.
+
+## Data Preprocessing
+
+\begin{itemize}
+  \item Delete id, host\_name and last\_review.
+  \item Delete 11 listings with price 0.
+  \item Missing data: 10052 in reviews\_per\_month, impute with 0.
+  \item Categorize minimum\_nights to 5 groups: (1,3], (3,7], (7,14], (14,21], (21,30], (30,$\infty$) days. 
+  \item Transformation: log(price), log(1+reviews\_per\_month). 
+\end{itemize}
+
+## EDA: Location matters for price
+
+```{r pricemap, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
+ny.map=get_map(location = c(left=-74.2445,right=-73.71298, bottom= 40.49975,top=40.9131),color = "bw",maptype = "toner",source = "stamen")
+ggmap(ny.map)+
+  geom_point(data = dat,
+                 aes(x = longitude, y = latitude, color=log(price)),cex = 0.4,alpha=0.5) + 
+  scale_color_gradient(low = "white", high = "red") +
+  ggtitle("Distribution of log(price)")
+
+```
+
+## EDA: Location matters for popularity
+
+```{r popmap, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
+ggmap(ny.map)+
+  geom_point(data = dat,
+                 aes(x = longitude, y = latitude, color=log(1+reviews_per_month)),cex = 0.4,alpha=0.5) + 
+  scale_color_gradient(low = "white", high = "red") +
+  ggtitle("Distribution of log(1+reviews/mon)")
+```
+
+## EDA: Location matters for traffic
+
+```{r trafficmap, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
+ggmap(ny.map)+
+  stat_density2d(data = dat,
+                 aes(x = longitude, y = latitude,fill = ..level.., alpha = ..level..), 
+                 geom = "polygon") + 
+  scale_fill_gradient(low = "green", high = "red") + 
+  ggtitle("2D-Density estimation")
+```
+
+## EDA: Room type 
+
+- Room type matters for price but not for popularity
+- Heterogeneity of room type exists across boroughs/neighborhoods (testing needed)
+
+```{r roomtype1, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
+dat%>%ggplot(data=.,aes(x=room_type,y=log(price)))+geom_boxplot()+theme_bw()
+```
+
+## EDA: Room type
+
+```{r roomtype2, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
+dat%>%ggplot(data=.,aes(x=room_type,y=log(1+reviews_per_month)))+geom_boxplot()+theme_bw()
+```
+
+## EDA: Room type
+
+```{r roomtype3, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
+dat%>%ggplot(data=.)+
+  geom_mosaic(aes(x=product(room_type,neighbourhood_group),fill=room_type))+
+  theme_bw()+
+  ggtitle("Heterogeneity of Room Type Across Boroughs")
+dat%>%ggplot(data=.)+
+  geom_mosaic(aes(x=product(room_type,neighbourhood),fill=room_type))+
+  theme_bw()+
+  ggtitle("Heterogeneity of Room Type Across Boroughs")
+```
+
+## EDA: Room type
+
+```{r roomtype4, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
+dat %>%
+  filter(neighbourhood_group=="Manhattan")%>%
+  group_by(neighbourhood,room_type) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))%>%ungroup()%>%
+  mutate(neighbourhood=as.numeric(neighbourhood))%>%
+  ggplot(data=.)+
+  geom_area(aes(x=neighbourhood,y=freq,fill=room_type),stat="identity",position = "stack")+
+  theme_bw()+
+  ggtitle("Heterogeneity of Room Type Across Neighborhoods (Manhattan)")
+```
+
+## EDA: Minimum Night
+
+```{r night, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
+dat %>%
+  filter(minimum_nights<=30) %>%
+  mutate(minimum_nights=factor(minimum_nights))%>%
+  ggplot(.,aes(minimum_nights)) +geom_bar() +theme_bw()
+```
+
+## Model: CARBayes
+
+\begin{itemize}
+	\item Multilevel Conditional Autoregressive (CAR) Model (Neighbourhood-Based)
+$$ \begin{aligned}
+ 	Y_{kj}|\mu_{kj} \sim f(y_{kj}|\mu_{kj}, \nu^2), \ \ \ &k= \text{neighbourhood}
+=1,...,K\\
+  &j=\text{listings}=1,...,m_k \end{aligned}$$
+$$g(\mu_{kj})=x_{kj}^T\beta + \psi_{kj}$$
+$$\psi_{kj}=\phi_k + \zeta_{kj}$$
+  \item Priors
+$$\beta \sim N(\mu_\beta, \Sigma_\beta)$$
+$$\phi_k|\phi_{-k} \sim N\Big(\frac{\rho \sum_{l=1}^K w_{kl}\phi_j}{\rho \sum_{j=1}^K w_{kl}+1-\rho}, \frac{\tau^2}{\rho\sum_{j=1}^Kw_{kl}+1-\rho}\Big)$$
+  \item $w_{kl}$ denotes whether neighborhood $k$ and $l$ are adjacent.
+  \item $\rho$ denotes spatial dependence.
+\end{itemize}
+
+## Model: CARBayes
+
+\begin{itemize}
+  \item Priors (Cont'd)
+	$$\begin{aligned}
+	&\zeta_{kj}\sim N(0, \sigma^2)\\
+	&\tau^2, \sigma^2\sim \text{Inv-Gamma} (a,b)\\
+	&\rho \sim \text{Uniform(0,1)}
+\end{aligned}$$
+	\item $x_{kj}$ include room\_type, neighbourhood\_group, availability\_365, log(1+reviews\_per\_month), minimum\_nights, etc.
+	\item  $\psi_{kj}=\phi_k + \zeta_{kj}$ includes both spatial information and individual random effect. 
+\end{itemize}
+
+
+## Further process the data
+
+\begin{itemize}
+	\item No data for exactly 217 neighbourhoods.
+	\item Relocate neighbourhoods according to formal NYC shapefile data (195 neighbourhoods).
+	\item 191 neighbourhoods have airbnb listings.
+	\item Obtain adjacency matrix $W=(w_{kl})$
+\end{itemize}
+
+## Neighbourhood Effect on log(price)
+
+```{r phi1, echo=FALSE, fig.cap="Neighbourhood Effect on log(price)", out.width = '75%'}
+knitr::include_graphics("CARBayes2.jpeg")
+```
+
+
+## Model Summary
+
+```{r summary1, echo=FALSE, fig.cap="Summary for Model", out.width = '75%'}
+knitr::include_graphics("summary.png")
+```
+
+
+## Preliminary conclusion
+
+\begin{itemize}
+	\item Manhattan has highest prices, Bronx the lowest.
+	\item Midtown South in Manhattan has the highest price.
+	\item Entire room $>$ Private room $>$ Shared room
+	\item Higher minimum\_nights leads to lower price. 
+\end{itemize}
+
+
+## Discussion
+
+- Include `last_review`: spatial temporal model.
+- Nonlinear model: spline regression for $x_{kj}$.
+- More spatial information (point-reference): longitude and latitude
+- Add random effect for `host_id`. Deal with minimum night (spline?)
+	
+
+
+
+
+
+
