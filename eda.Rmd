@@ -158,7 +158,7 @@ dat1[1:10,]
 
 # 4. Word Count
 ```{r}
-Names = paste(dat$name, collapse = " ")
+Names = paste(dat$name, collapse = " ") %>% tolower()
 Names = strsplit(Names, " ")[[1]]
 Names = table(Names)
 
@@ -182,7 +182,6 @@ train = dat %>% sample_frac(.7)
 test  <- anti_join(dat, train, by = 'id') 
 ```
 
-## 5.1 Linear Regression
 
 ```{r}
 
@@ -190,12 +189,6 @@ test  <- anti_join(dat, train, by = 'id')
 
 
 
-
-## 5.2 LASSO
-
-## 5.3 GAM
-
-## 5.4 Decision Tree \& Random Forest
 
 
 
@@ -211,4 +204,104 @@ test  <- anti_join(dat, train, by = 'id')
 
 
  
+>>>>>>> 0964e2a55263521de26709bbce78b1595c96e481
+
+
+
+
+
+
+
+## Spatial Data Analysis
+
+```{r}
+
+library(sf)
+library(dplyr)
+library(tidyr)
+
+load("resultdataset.rdata")
+adj = st_touches(p, sparse=FALSE)
+adj2 = matrix(as.numeric(adj), 195, 195)
+adj[adj==TRUE]=1
+
+corrplot::corrplot(adj,method="color",type="full",tl.col="black",cl.pos = "n")
+
+res_dat = res_dat %>% mutate(ind_area = as.integer(res_dat$ntaname))
+
+dat = res_dat
+dat = dat[, !names(dat) %in% c('id', 'host_name','last_review')]
+dat$reviews_per_month[is.na(dat$reviews_per_month)] = 0
+dat = dat %>% filter(price > 0)
+dat = dat %>% filter(!is.na(dat$ind_area))
+
+dat$nata_droped = droplevels(dat$ntaname)
+dat$ind_area = as.integer(dat$nata_droped)
+which(levels(dat$ntaname) %in% setdiff(levels(dat$ntaname), dat$ntaname))
+# 1, 72, 135, 149
+adjj = adj2[-c(1,72,135,149), -c(1,72,135,149)]
+
+
+dat$availability_365 = scale(dat$availability_365)
+
+dat$minimum_nights[dat$minimum_nights<3] = 0
+dat$minimum_nights[dat$minimum_nights>=3 & dat$minimum_nights<7] = 1
+dat$minimum_nights[dat$minimum_nights>=7 & dat$minimum_nights<14] = 2
+dat$minimum_nights[dat$minimum_nights>=14 & dat$minimum_nights<21] = 3
+dat$minimum_nights[dat$minimum_nights>=21 & dat$minimum_nights<28] = 4
+dat$minimum_nights[dat$minimum_nights>=28] = 5
+dat$minimum_nights = as.factor(dat$minimum_nights)
+
+library(CARBayes)
+s =S.CARmultilevel(formula=log(price) ~ room_type + neighbourhood_group + log(1+reviews_per_month) + availability_365 + minimum_nights,
+                family = 'gaussian', data = dat, ind.area=dat$ind_area,
+                W=adjj, burnin=500, n.sample=1000)
+
+s2 =S.CARmultilevel(formula=log(price) ~ room_type + log(1+reviews_per_month) + availability_365 + minimum_nights,family = 'gaussian', data = dat, ind.area=dat$ind_area,W=adjj, burnin=500, n.sample=1000)
+
+#s3 = S.CARmultilevel(formula = log(1+reviews_per_month) ~ room_type + log(price) + availability_365 + minimum_nights,family = 'gaussian', data = dat, ind.area=dat$ind_area,W=adjj, burnin=500, n.sample=1000)
+
+ss = s2$samples
+
+phidf = as.data.frame(ss$phi)
+colnames(phidf) = 1:191
+phidf = phidf %>% gather()
+
+
+Man = which(levels(dat$nata_droped) %in% unique(dat$nata_droped[dat$neighbourhood_group=="Manhattan"]))
+Bky = which(levels(dat$nata_droped) %in% unique(dat$nata_droped[dat$neighbourhood_group=="Brooklyn"]))
+Que = which(levels(dat$nata_droped) %in% unique(dat$nata_droped[dat$neighbourhood_group=="Queens"]))
+SI = which(levels(dat$nata_droped) %in% unique(dat$nata_droped[dat$neighbourhood_group=="Staten Island"]))
+Bnx = which(levels(dat$nata_droped) %in% unique(dat$nata_droped[dat$neighbourhood_group=="Bronx"]))
+
+phidf$borough = rep('0', dim(phidf)[1])
+phidf$borough[phidf$key %in% Man] = 'Manhattan'
+phidf$borough[phidf$key %in% Que] = 'Queen'
+phidf$borough[phidf$key %in% SI] = 'Staten Island'
+phidf$borough[phidf$key %in% Bnx] = 'Bronx'
+phidf$borough[phidf$key %in% Bky] = 'Brooklyn'
+
+library(ggplot2)
+ggplot(phidf, aes(x = borough, y = value, fill = key))+
+  geom_boxplot(show.legend = FALSE)+
+  theme(axis.text.x = element_text(hjust = 1, size=10))
+
+
+
+ggplot(phidf, aes(x = borough, y = value, fill = key))+
+  geom_boxplot(show.legend = FALSE)+
+  scale_x_discrete(labels=levels(dat$nata_droped))+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size=5))
+
+
+
+```
+
+
+
+
+
+
+
+
 
