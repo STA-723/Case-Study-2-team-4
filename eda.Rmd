@@ -87,6 +87,19 @@ ggplot(dat, aes(x=longitude, y = latitude, color = availability_365))+
                     -74.258, -73.69, 40.49,40.92) + 
   geom_point(cex = 0.4) +
   scale_colour_gradient(low = 'red', high = 'grey') 
+
+ggplot(dat, aes(x=longitude, y = latitude, fill = ..level.., alpha = ..level..))+
+  annotation_custom(rasterGrob(img, 
+                               width = unit(1,"npc"), 
+                               height = unit(1,"npc")), 
+                    -74.258, -73.69, 40.49,40.92) + 
+  stat_density2d(geom = "polygon") + 
+  scale_fill_gradient(low = "blue", high = "red") + 
+  scale_alpha(range = c(0, 0.75), guide = FALSE)+
+  scale_colour_gradient(low = 'red', high = 'grey') +
+  
+
+
 ```
 
 
@@ -204,7 +217,6 @@ test  <- anti_join(dat, train, by = 'id')
 
 
  
->>>>>>> 0964e2a55263521de26709bbce78b1595c96e481
 
 
 
@@ -220,14 +232,22 @@ library(sf)
 library(dplyr)
 library(tidyr)
 
-load("resultdataset.rdata")
+
+load("resultdataset 1.rdata")
 adj = st_touches(p, sparse=FALSE)
 adj2 = matrix(as.numeric(adj), 195, 195)
 adj[adj==TRUE]=1
 
-corrplot::corrplot(adj,method="color",type="full",tl.col="black",cl.pos = "n")
+#corrplot::corrplot(adj,method="color",type="full",tl.col="black",cl.pos = "n")
+
+res_dat=res_dat[res_dat$price!=0,]
+res_dat=dplyr::select(as.data.frame(res_dat), -geometry)%>%
+  mutate(host_id=as.factor(host_id),night=minimum_nights)
+res_dat$night=cut(res_dat$night,breaks = c(0,3, 7, 14, 21,28,Inf), right = TRUE)
 
 res_dat = res_dat %>% mutate(ind_area = as.integer(res_dat$ntaname))
+
+
 
 dat = res_dat
 dat = dat[, !names(dat) %in% c('id', 'host_name','last_review')]
@@ -244,24 +264,33 @@ adjj = adj2[-c(1,72,135,149), -c(1,72,135,149)]
 
 dat$availability_365 = scale(dat$availability_365)
 
-dat$minimum_nights[dat$minimum_nights<3] = 0
-dat$minimum_nights[dat$minimum_nights>=3 & dat$minimum_nights<7] = 1
-dat$minimum_nights[dat$minimum_nights>=7 & dat$minimum_nights<14] = 2
-dat$minimum_nights[dat$minimum_nights>=14 & dat$minimum_nights<21] = 3
-dat$minimum_nights[dat$minimum_nights>=21 & dat$minimum_nights<28] = 4
-dat$minimum_nights[dat$minimum_nights>=28] = 5
+
 dat$minimum_nights = as.factor(dat$minimum_nights)
 
+
+
+
+dat$topic1 = grepl("apart", dat$name) | grepl("bedroom", dat$name) | grepl("studio", dat$name) | grepl("east", dat$name) | grepl("spacious", dat$name) | grepl("cozi", dat$name) | grepl("villag", dat$name) | grepl("heart", dat$name) | grepl("bright", dat$name) | grepl("west", dat$name)
+
+dat$topic2 = grepl("brooklyn", dat$name) | grepl("williamsburg", dat$name) | grepl("beauti", dat$name) | grepl("loft", dat$name) | grepl("home", dat$name) | grepl("new", dat$name) | grepl("locat", dat$name) | grepl("great", dat$name) | grepl("brownston", dat$name) | grepl("garden", dat$name) | grepl("west", dat$name)
+
+dat$topic3 = grepl("room", dat$name) | grepl("privat", dat$name) | grepl("park", dat$name) | grepl("near", dat$name) | grepl("cozi", dat$name) | grepl("sunni", dat$name) | grepl("bed", dat$name) | grepl("central", dat$name) | grepl("bath", dat$name) | grepl("close", dat$name) 
+
+dat$topic4 = grepl("apt", dat$name) | grepl("bedroom", dat$name) | grepl("manhattan", dat$name) | grepl("nyc", dat$name) | grepl("luxuri", dat$name) | grepl("min", dat$name) | grepl("midtown", dat$name) | grepl("one", dat$name) | grepl("large", dat$name) | grepl("view", dat$name) 
+
+
+dat = dat %>% mutate(availability_365 = ifelse(availability_365>365, 365, availability_365))
+
 library(CARBayes)
-s =S.CARmultilevel(formula=log(price) ~ room_type + neighbourhood_group + log(1+reviews_per_month) + availability_365 + minimum_nights,
+s2 =S.CARmultilevel(formula=log(price) ~  room_type + neighbourhood_group + availability_365 + log(1 + reviews_per_month) + night +metrodist,
                 family = 'gaussian', data = dat, ind.area=dat$ind_area,
-                W=adjj, burnin=500, n.sample=1000)
+                W=adjj, burnin=2000, n.sample=4000, thin = 5)
 
 s2 =S.CARmultilevel(formula=log(price) ~ room_type + log(1+reviews_per_month) + availability_365 + minimum_nights,family = 'gaussian', data = dat, ind.area=dat$ind_area,W=adjj, burnin=500, n.sample=1000)
 
 #s3 = S.CARmultilevel(formula = log(1+reviews_per_month) ~ room_type + log(price) + availability_365 + minimum_nights,family = 'gaussian', data = dat, ind.area=dat$ind_area,W=adjj, burnin=500, n.sample=1000)
 
-ss = s2$samples
+ss = s$samples
 
 phidf = as.data.frame(ss$phi)
 colnames(phidf) = 1:191
@@ -299,9 +328,103 @@ ggplot(phidf, aes(x = borough, y = value, fill = key))+
 
 
 
+## LDA
+```{r}
+Names = data.frame(name = dat$name)
+library(tm)
+text_corpus <- VCorpus(VectorSource(Names$name))
+
+text_corpus_clean <- tm_map(text_corpus, content_transformer(tolower))
+text_corpus_clean <- tm_map(text_corpus_clean, stemDocument)
+text_corpus_clean <- tm_map(text_corpus_clean, removeNumbers)
+text_corpus_clean <- tm_map(text_corpus_clean, removeWords, stopwords())
+text_corpus_clean <- tm_map(text_corpus_clean, removePunctuation)
+text_corpus_clean <- tm_map(text_corpus_clean, stripWhitespace)
+
+```
+
+```{r}
+library(wordcloud)
+wordcloud(text_corpus_clean, min.freq = 10, random.order = FALSE,
+          colors=brewer.pal(8, "Dark2"))
+```
+
+```{r}
+text_dtm <- DocumentTermMatrix(text_corpus_clean)
+text_dtm
+
+library(topicmodels)
+
+rowTotals <- apply(text_dtm , 1, sum) #Find the sum of words in each Document
+dtm.new   <- text_dtm[rowTotals> 0, ] 
 
 
 
+```
 
 
 
+```{r}
+text_lda <- LDA(dtm.new, k = 4, method = "VEM", control = NULL)
+text_lda
+library(tidytext)
+text_topics <- tidy(text_lda, matrix = "beta")
+text_topics
+
+library(ggplot2)
+text_top_terms <- text_topics %>%
+  group_by(topic) %>%
+  top_n(10, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+text_top_terms %>%
+  mutate(term = reorder(term, beta)) %>%
+  ggplot(aes(term, beta, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  coord_flip()
+
+```
+
+
+
+```{r}
+beta_spread <- text_topics %>%
+  mutate(topic = paste0("topic", topic)) %>%
+  spread(topic, beta) %>%
+  filter(topic1 > .001 | topic2 > .001) %>%
+  mutate(log_ratio = log2(topic2 / topic1))
+
+beta_spread %>%
+  group_by(direction = log_ratio > 0) %>%
+  top_n(15, abs(log_ratio)) %>%
+  ungroup() %>%
+  mutate(term = reorder(term, log_ratio)) %>%
+  ggplot(aes(term, log_ratio)) +
+  geom_col() +
+  labs(y = "Log2 ratio of beta in topic 2 / topic 1") +
+  coord_flip()
+
+
+
+```
+
+
+
+```{r}
+AB<-read.csv("AB_NYC_2019.csv") %>% 
+  filter(price!=0) %>%
+  mutate(reviews_per_month=replace_na(reviews_per_month,0)) %>%
+  mutate(reviews_per_month=log(1+reviews_per_month),price=log(price)) 
+
+
+AB_NA<-AB %>% 
+  mutate(availability_365=ifelse(availability_365==0,NA,availability_365)) %>%
+  mutate(availability_365=ifelse(availability_365>365,365,availability_365)) %>%
+  dplyr::select(-host_id,-host_name,-id,-last_review,-name) 
+
+modelFitInit<-lm(price ~  reviews_per_month + availability_365 +room_type+neighbourhood_group,AB_NA)
+summary(modelFitInit)
+AIC(modelFitInit)
+```
