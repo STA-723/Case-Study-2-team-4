@@ -23,6 +23,8 @@ geometry: margin=1.2in
 
 ##### Abstract
 
+Airbnb home rental listings vary in price and popularity; one question perninent to hosts is which listings are most successful. We explore the relationships between certain rental characteristics (including neighbourhood location) and listing price/popularity in NYC. 
+
 
 #### 1. Introduction
 
@@ -41,11 +43,9 @@ Most questions of interest we address in this case study involve finding pattern
 
 ##### 2.2 Missing data manipulation
 
-The $\texttt{availability_365}$ variable has zero-valued observations which may correspond to hosts who temporarily take their listings off the market. Comparing the distribution of other variables for zero-valued vs. positive-valued $\texttt{availability_365}$ observations suggests that the data may be missing at random because we don't see an obvious pattern in missingness. Using MICE, we impute the data, treating the zero-valued observations as missing values. 
+The $\texttt{availability_365}$ variable has zero-valued observations which may correspond to hosts who temporarily take their listings off the market. Comparing the distribution of other variables for zero-valued vs. positive-valued $\texttt{availability_365}$ observations suggests that the data may be missing at random because we don't see an obvious pattern in missingness. Using MICE [@buuren2010mice], we impute the data, treating the zero-valued observations as missing values. 
 
 Our model using the imputed data had indistinguishable AIC with our model without imputed data. As a result, we choose to use the original dataset and in future work, explore missingness of $\texttt{availability_365}$ further.  
-
-Cite MICE: [@buuren2010mice] 
 
 ##### 2.3 Multilevel Conditional Autoregressive (CAR) Model
 
