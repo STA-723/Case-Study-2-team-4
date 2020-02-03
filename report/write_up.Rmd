@@ -37,6 +37,10 @@ Most questions of interest we address in this case study involve finding pattern
 
 ##### 2.2 Missing data manipulation
 
+The $\texttt{availability_365}$ variable has zero-valued observations which may correspond to hosts who temporarily take their listings off the market. Comparing the distribution of other variables for zero-valued vs. positive-valued $\texttt{availability_365}$ observations suggests that the data may be missing at random because we don't see an obvious pattern in missingness. Using MICE, we impute the data, treating the zero-valued observations as missing values. 
+
+Our model using the imputed data had indistinguishable AIC with our model without imputed data. As a result, we choose to use the original dataset and in future work, explore missingness of $\texttt{availability_365}$ further.  
+
 Cite MICE: [@buuren2010mice] 
 
 ##### 2.3 Multilevel Conditional Autoregressive (CAR) Model
@@ -51,7 +55,7 @@ To carry out text analysis on names of listings, we consider using text mining m
 
 ##### 3.1 Exploratory Data Analysis
 
-We obtain an intuitive understanding of the data based on plots of price, popularity and traffic (Figs \ref{} ). Most high-priced listings are located in Manhattan, while some of them also lie in Brooklyn. Similar pattern is discovered for traffic. (Polularity?) In addition, EDA plots for room type (Fig \ref{}) demonstrate that it matters for price but not for popularity. We can also see the heterogeneity of room type across boroughs/neighborhoods. In addition, wordcloud (Fig \ref{}) suggests some high-frequency words in high-priced listings: luxury, manhattan, apartment, etc. 
+We obtain an intuitive understanding of the data based on plots of price, popularity and traffic (Figs \ref{} ). Most high-priced listings are located in Manhattan, while some of them also lie in Brooklyn. Similar pattern is discovered for traffic. (Polularity?) In addition, EDA plots for room type (Fig \ref{}) demonstrate that it matters for price but not for popularity. We can also see the heterogeneity of room type across boroughs/neighborhoods. In addition, a wordcloud (Fig \ref{}) suggests some high-frequency words in high-priced listings: luxury, manhattan, apartment, etc. 
 
 ##### 3.2 Main Results
 
