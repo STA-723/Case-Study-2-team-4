@@ -173,7 +173,7 @@ $$\phi_k|\phi_{-k} \sim N\Big(\frac{\rho \sum_{l=1}^K w_{kl}\phi_j}{\rho \sum_{j
 	\item  $\psi_{kj}=\phi_k + \zeta_{kj}$ includes both spatial information and individual random effect. 
 \end{itemize}
 
-## Extra predictors
+## Extra data sources
 
 - Incorporate shape file for nieghbourhoods from NYC Opendata.
   - Relocate neighbourhoods (191 out of 195 neighbourhoods have airbnb listings)
