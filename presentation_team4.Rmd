@@ -64,7 +64,6 @@ ggmap(ny.map)+
                  aes(x = longitude, y = latitude, color=log(price)),cex = 0.2,alpha=0.5) + 
   ggtitle("Distribution of log(price)") +
   scale_colour_gradientn(colors = jet.colors(7), limits = c(3,7))
-
 ```
 
 ## EDA: Location matters for popularity
@@ -173,7 +172,7 @@ $$\phi_k|\phi_{-k} \sim N\Big(\frac{\rho \sum_{l=1}^K w_{kl}\phi_j}{\rho \sum_{j
 	\item  $\psi_{kj}=\phi_k + \zeta_{kj}$ includes both spatial information and individual random effect. 
 \end{itemize}
 
-## Extra data sources
+## Extra predictors
 
 - Incorporate shape file for nieghbourhoods from NYC Opendata.
   - Relocate neighbourhoods (191 out of 195 neighbourhoods have airbnb listings)
@@ -184,34 +183,100 @@ $$\phi_k|\phi_{-k} \sim N\Big(\frac{\rho \sum_{l=1}^K w_{kl}\phi_j}{\rho \sum_{j
 
 ## Model Summary
 
-```{r summary1, echo=FALSE, fig.cap="Summary for Model", out.width = '75%'}
-knitr::include_graphics("summary.png")
+```{r summary1, echo=FALSE, fig.cap="Summary for Model on price", out.width = '75%'}
+knitr::include_graphics("sum1.png")
 ```
 
 ## Neighbourhood Effect on log(price)
 
-```{r phi1, echo=FALSE, fig.cap="Neighbourhood Effect on log(price)", out.width = '75%'}
-knitr::include_graphics("CARBayes2.jpeg")
+```{r, echo=FALSE, fig.cap="Neighbourhood Effect on log(price)", out.width = '100%'}
+knitr::include_graphics("Carprice.jpeg")
 ```
+
+## Model Summary
+
+```{r summary2, echo=FALSE, fig.cap="Summary for Model on popularity", out.width = '75%'}
+knitr::include_graphics("sum2.png")
+```
+
+## Neighbourhood Effect on 
+
+```{r, echo=FALSE, fig.cap="Neighbourhood Effect on log(1+reviews per month)", out.width = '100%'}
+knitr::include_graphics("Carpop.jpeg")
+```
+
 
 A plot on maps may be helpful
 
 ## Conclusion
 
 \begin{itemize}
-	\item Manhattan has highest prices, Bronx the lowest.
-	\item Midtown South in Manhattan has the highest price.
-	\item Entire room $>$ Private room $>$ Shared room
+	\item Manhattan has the highest prices, Bronx the lowest.
+	\item "Midtown South" in Manhattan is the most luxurious, "New Drop-Midland Beach" in Staten Island is the cheapest.
+	\item "East Elmhurst" in Queen is the most popular (LaGuardia Airport), "Co-op City" in Bronx is the most unpopular.
+	\item Entire room $>$ Private room $>$ Shared room.
 	\item Higher minimum\_nights leads to lower price. 
+	\item Longer distance to metro stations reduces price.
+	
 \end{itemize}
 
-## Text Analysis: LDA
 
-Put LDA model here
+## Text Analysis: Preprocessing
 
-## Results from LDA
+\begin{itemize}
+	\item Transform to lower case
+	\item Remove non-informative characters
+	\begin{itemize}
+	  \item Punctuations, Stopwords, Whitespace, Numbers, etc.
+	\end{itemize}
+	\item Word normalization
+	\begin{itemize}
+	  \item Porter's stemmer algorithm.
+	  \item e.g. luxury, luxurious $\rightarrow$ luxuri
+	\end{itemize}
+\end{itemize}
 
-## Words frequency
+## Text Analysis: Wordcloud of listings with price>2000
+
+```{r, echo=FALSE, fig.cap="Wordcloud", out.width = '100%'}
+knitr::include_graphics("high.jpeg")
+#knitr::include_graphics("wordcloud.jpeg")
+```
+
+## Text Analysis: Latent Dirichlet Allocation
+
+\begin{itemize}
+\item Terms:
+  \begin{itemize}
+  \item Corpus $D = \{\boldsymbol{w}_1, \boldsymbol w_2, ..., \boldsymbol w_M\}$
+  \item Doument $\boldsymbol w = \{w_1, w_2, ..., w_N\}$
+  \item Word $w_i \in \{1,...,V\}$, V is total number of unique words.
+  \end{itemize}
+\item LDA Model:\\
+       \ \ For all document $\boldsymbol w$ in $D$:\\
+      \ \  \ \  1. $N\sim \text{Poisson} (\xi)$\\
+      \ \ \ \   2. $\theta\sim \text{Dir}(\alpha)$\\
+      \ \ \ \ 3. For word $w_n$ $(n=1,...,N)$ \\
+      \ \ \ \ \ \ (a) choose a topic $z_n|\theta \sim \text{Multinomial}(\theta)$\\
+      \ \ \ \ \ \ (b) choose a word $w_n|z_n, \beta \sim \text{Multinomial}(\beta_{z_n})$
+\end{itemize}
+```{r pressure, echo=FALSE,  out.width = '50%', fig.align='center'}
+knitr::include_graphics("LDA2.png")
+```
+
+## LDA results
+
+- 4 topics: Adjectives, Locations, Brooklyn related, Manhattan related.
+
+```{r phi1, echo=FALSE, fig.cap="LDA results", out.width = '90%'}
+knitr::include_graphics("LDA.jpeg")
+```
+
+
+
+## Word frequency
+
+
 
 
 ## Discussion
@@ -222,6 +287,7 @@ Put LDA model here
 - More spatial information (point-reference): longitude and latitude
 - Add random effect for `host_id`. 
 	
+
 
 
 
