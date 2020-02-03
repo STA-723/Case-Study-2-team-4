@@ -32,13 +32,10 @@ dat$reviews_per_month[dat$number_of_reviews==0]=0
 ## Introduction
 
 - Data: 2019 Airbnb listings in NYC, 48895 observations.
-- Goal: Identify patterns among the listings in NYC.
-  - \textcolor{red}{Patterns for price/popularity: influential factors? quantify influence?}
-    - Patterns for locations: heterogeneity across boroughs/neighborhoods?
-    - Patterns for the type of the listings: vary across neighborhoods?
-    - Patterns for listings names: text analysis
-  - \textcolor{red}{Rank the boroughs/neighborhoods based on price/popularity/traffic}
-  - \textcolor{red}{Post a listing: choice of location and name}
+- Goal: 
+  - Patterns for price/popularity: influential factors? quantify influence?
+  - Find the most valuable neighborhoods based on price/popularity balance
+  - Post a listing: choice of location and name
 - Model: 
   - CARBayes for `log(price)` and `log(1+reviews_per_month)` respectively.
   - LDA for text analysis
@@ -85,7 +82,6 @@ ggmap(ny.map)+
     - Pearson's Chi-squared test (stat:6363.5,df:440,p-value:<2.2e-16)
 - Minimum Night
   - nonlinear effect on price/popularity
-  - 
 ```{r roomtype4, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
 dat %>%
   filter(neighbourhood_group=="Manhattan")%>%
@@ -106,21 +102,16 @@ chisq.test(tbl)
 
 ## Data Preprocessing
 
-- Delete: id, host\_name and last\_review; 11 listings with price 0.
-- Impute: impute 0's for `reviews\_per\_month` (10052 records).
-- Categorize: minimum\_nights to 5 groups: (1,3], (3,7], (7,14], (14,21], (21,30], (30,$\infty$) days. 
-- Transformation: log(price), log(1+reviews\_per\_month). 
+- Delete: `id`, `host_name` and `last_review`; 11 listings with price 0.
+- Impute: impute 0's for `reviews_per_month` (10052 records).
+- Categorize: `minimum_nights` to 5 groups by weeks.
+- Transformation: `log(price)`, `log(1+reviews_per_month)`. 
 - Incorporate new dataset: 
   - shape file for neighbourhoods (NYC Opendata)
-    - relocate neighbourhoods
-    - Obtain adjacency matrix for neighhoods
   - locations for metro stations
-    - Obtain logarithm distance to the closest metro station for each listing
 - Text cleaning:
   - Remove punctuations, stopwords, etc.
-  - Word nomalization 
-    - Apply Porter's stemmer algorithm to keep the root
-    - e.g. luxury, luxurious $\rightarrow$ luxuri
+  - Word nomalization (Porter's stemmer algorithm)
 
 ## Model: CARBayes
 
@@ -174,6 +165,12 @@ $$\phi_k|\phi_{-k} \sim N\Big(\frac{\rho \sum_{l=1}^K w_{kl}\phi_j}{\rho \sum_{j
 knitr::include_graphics("LDA2.png")
 ```
 
+## LDA results
+- 4 topics: Adjectives, Locations, Brooklyn related, Manhattan related.
+```{r phi1, echo=FALSE, fig.cap="LDA results", out.width = '90%'}
+knitr::include_graphics("LDA.jpeg")
+```
+
 ## Model Summary for `log(price)`
 
 ```{r summary1, echo=FALSE, fig.cap="Summary for Model on price", out.width = '75%'}
@@ -200,18 +197,10 @@ knitr::include_graphics("Carprice.jpeg")
 - Top 20 neighborhoods based on price/popularity
 Add plot here
 
-## LDA results
-
-- 4 topics: Adjectives, Locations, Brooklyn related, Manhattan related.
-
-```{r phi1, echo=FALSE, fig.cap="LDA results", out.width = '90%'}
-knitr::include_graphics("LDA.jpeg")
-```
-
 ## Text Analysis: Wordcloud of listings with price>2000
 
 ```{r, echo=FALSE, fig.cap="Wordcloud", out.width = '100%'}
-knitr::include_graphics("high.jpeg")
+knitr::include_graphics("Word.jpeg")
 #knitr::include_graphics("wordcloud.jpeg")
 ```
 
