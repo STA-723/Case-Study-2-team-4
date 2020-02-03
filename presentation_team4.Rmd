@@ -195,10 +195,12 @@ knitr::include_graphics("Carprice.jpeg")
 ```
 ## Most valuable neighborhoods
 - Top 20 neighborhoods based on price/popularity
+
+
 Add plot here
 
-## Text Analysis: Wordcloud of listings with price>2000
-
+## Text Analysis: 
+- Wordcloud for price < 1000 (left) and all listings(right) 
 ```{r, echo=FALSE, fig.cap="Wordcloud", out.width = '100%'}
 knitr::include_graphics("Word.jpeg")
 #knitr::include_graphics("wordcloud.jpeg")
