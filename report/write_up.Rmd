@@ -1,5 +1,5 @@
 ---
-title: "Patterns among Airbnb Listings in NYC"
+title: "Best neighborhods for Airbnb Listings in NYC"
 author: "Frances Hung, Yunran Chen, Keru Wu"
 fontsize: "11pt"
 output:
@@ -26,10 +26,14 @@ geometry: margin=1.2in
 
 #### 1. Introduction
 
+<<<<<<< HEAD
+Airbnb is a platform for short-term renting 
+=======
 Our data observations consist of individual Airbnb listings in New York City. Each listing observation contains the following variables: host ID, neighbourhood group, neighbourhood, longitude/latitude, available days of the listing in a year, room type, price, minimum nights required, number of reviews, and reviews per month.
 
 Most questions of interest we address in this case study involve finding patterns in price and popularity among neighbourhoods. We find the most influential factors in the price/popularity of a listing, and look for heterogeneity among neighbourhoods and boroughs in terms of traffic, price, and room type. From this and some text analysis, we build an Airbnb listing which would be predicted to be among the most profitable in NYC.
 
+>>>>>>> 3d75e00109677d00f4e5560835758b83079bc8f1
 
 #### 2. Materials and Methods
 
@@ -75,6 +79,101 @@ Our text analysis (Fig \ref{fig:wordcloud1}, \ref{fig:wordcloud2}) indicates som
 
 #### 4. Discussion
 
+#### Appendix
+
+##### EDA
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.height = 5)
+library(corrplot)
+library(naniar)
+library(ggplot2)
+library(dplyr)
+library(tibble)
+library(tidyr)
+library(purrr)
+library(lme4)
+library(jpeg)
+library(ggpubr)
+library(grid)
+library(stringr)
+library("ggmap")
+library(ggmosaic)
+library(MASS)
+```
+
+```{r pre, include=FALSE}
+data = read.csv('AB_NYC_2019.csv', na.strings = c("", "NA"))
+dat=data%>%filter(price!=0)
+dat$reviews_per_month[dat$number_of_reviews==0]=0
+```
+
+```{r pricemap, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
+jet.colors <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
+ny.map=get_map(location = c(left=-74.2445,right=-73.71298, bottom= 40.49975,top=40.9131),color = "bw",maptype = "toner",source = "stamen")
+ggmap(ny.map)+
+  geom_point(data = dat,
+                 aes(x = longitude, y = latitude, color=log(price)),cex = 0.2,alpha=0.5) + 
+  ggtitle("Distribution of log(price)") +
+  scale_colour_gradientn(colors = jet.colors(7), limits = c(3,7))
+
+```
+
+```{r popmap, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
+ggmap(ny.map)+
+  geom_point(data = dat,
+                 aes(x = longitude, y = latitude, color=log(1+reviews_per_month)),cex = 0.2,alpha=0.5) + 
+  ggtitle("Distribution of log(1+reviews/mon)") +
+  scale_colour_gradientn(colors = jet.colors(7), limits = c(0,3))
+```
+
+```{r trafficmap, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
+ggmap(ny.map)+
+  stat_density2d(data = dat,
+                 aes(x = longitude, y = latitude,fill = ..level.., alpha = ..level..), 
+                 geom = "polygon") + 
+  scale_fill_gradient(low = "green", high = "red") + 
+  ggtitle("2D-Density estimation")
+```
+
+```{r roomtype1, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
+dat%>%ggplot(data=.,aes(x=room_type,y=log(price)))+geom_boxplot()+theme_bw()
+```
+
+```{r roomtype2, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
+dat%>%ggplot(data=.,aes(x=room_type,y=log(1+reviews_per_month)))+geom_boxplot()+theme_bw()
+```
+
+```{r roomtype4, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
+dat %>%
+  filter(neighbourhood_group=="Manhattan")%>%
+  group_by(neighbourhood,room_type) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))%>%ungroup()%>%
+  mutate(neighbourhood=as.numeric(neighbourhood))%>%
+  ggplot(data=.)+
+  geom_area(aes(x=neighbourhood,y=freq,fill=room_type),stat="identity",position = "stack")+
+  theme_bw()+
+  ggtitle("Heterogeneity of Room Type Across Neighborhoods (Manhattan)")
+```
+
+```{r testroom, eval=FALSE, message=FALSE, warning=FALSE, cache=TRUE, include=FALSE}
+tbl=table(dat$room_type,dat$neighbourhood)
+chisq.test(tbl)
+```
+
+
+```{r night, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
+dat=dat%>%mutate(night=minimum_nights)
+dat$night=cut(dat$night,breaks = c(0,3, 7, 14, 21,28,Inf), right = TRUE)
+dat %>% ggplot(.,aes(x=night,y=log(price)))+geom_boxplot()+theme_bw()
+```
+
+```{r night1, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
+dat %>% ggplot(.,aes(x=night,y=log(1+reviews_per_month)))+geom_boxplot()+theme_bw()
+```
+
+##### CARBayes
 
 ```{r, echo=F, include=F}
 
@@ -218,14 +317,13 @@ phidf$borough[phidf$key %in% Bky] = 'Brooklyn'
 ```
 
 ```{r Pop CAR plot, echo=FALSE,cache=TRUE, fig.width = 8,fig.cap="\\label{fig:car2-plot} CAR Model on popularity - Neighbourhoods"}
-library(ggplot2)
 ggplot(phidf, aes(x = borough, y = value, fill = key))+
   geom_boxplot(show.legend = FALSE, lwd= 0.1, outlier.size=0.1)+
   theme(axis.text.x = element_text(hjust = 1, size=10))
 
 ```
 
-
+##### Text Analysis
 
 ```{r Wordcloud1, echo=FALSE,cache=TRUE, fig.width = 5,fig.cap="\\label{fig:wordcloud1} Wordcloud for listings with price > 2000", warning=FALSE}
 Names = data.frame(name = dat$name[dat$price>1000])

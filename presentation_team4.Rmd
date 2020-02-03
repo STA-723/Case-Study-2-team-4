@@ -43,17 +43,6 @@ dat$reviews_per_month[dat$number_of_reviews==0]=0
   - CARBayes for `log(price)` and `log(1+reviews_per_month)` respectively.
   - LDA for text analysis
 
-## Data Preprocessing
-
-\begin{itemize}
-  \item Delete id, host\_name and last\_review.
-  \item Delete 11 listings with price 0.
-  \item Missing data: 10052 in reviews\_per\_month, impute with 0.
-  \item Categorize minimum\_nights to 5 groups: (1,3], (3,7], (7,14], (14,21], (21,30], (30,$\infty$) days. 
-  \item Transformation: log(price), log(1+reviews\_per\_month). 
-  \item Incorporate new dataset: shape file for neighbourhoods, locations for metro stations
-\end{itemize}
-
 ## EDA: Location matters for price
 
 ```{r pricemap, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
@@ -61,7 +50,7 @@ jet.colors <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F"
 ny.map=get_map(location = c(left=-74.2445,right=-73.71298, bottom= 40.49975,top=40.9131),color = "bw",maptype = "toner",source = "stamen")
 ggmap(ny.map)+
   geom_point(data = dat,
-                 aes(x = longitude, y = latitude, color=log(price)),cex = 0.2,alpha=0.5) + 
+                 aes(x = longitude, y = latitude, color=log(price)),cex = 0.1,alpha=0.3) + 
   ggtitle("Distribution of log(price)") +
   scale_colour_gradientn(colors = jet.colors(7), limits = c(3,7))
 ```
@@ -71,7 +60,7 @@ ggmap(ny.map)+
 ```{r popmap, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
 ggmap(ny.map)+
   geom_point(data = dat,
-                 aes(x = longitude, y = latitude, color=log(1+reviews_per_month)),cex = 0.2,alpha=0.5) + 
+                 aes(x = longitude, y = latitude, color=log(1+reviews_per_month)),cex = 0.1,alpha=0.3) + 
   ggtitle("Distribution of log(1+reviews/mon)") +
   scale_colour_gradientn(colors = jet.colors(7), limits = c(0,3))
 ```
@@ -87,26 +76,16 @@ ggmap(ny.map)+
   ggtitle("2D-Density estimation")
 ```
 
-## EDA: Room type 
+## EDA: Potential effects
 
-- Room type matters for price but not for popularity
-- Heterogeneity of room type exists across boroughs/neighborhoods (testing needed)
-
-```{r roomtype1, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
-dat%>%ggplot(data=.,aes(x=room_type,y=log(price)))+geom_boxplot()+theme_bw()
-```
-
-## EDA: Room type
-
-```{r roomtype2, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
-dat%>%ggplot(data=.,aes(x=room_type,y=log(1+reviews_per_month)))+geom_boxplot()+theme_bw()
-```
-
-## EDA: Room type
-
-- Type of listing vary across neighborhoods.
-- Pearson's Chi-squared test (stat:6363.5,df:440,p-value:<2.2e-16)
-
+- Neighborhoods/boroughs: spatial effect exist
+- Room type
+  - Room type matters for price but not for popularity
+  - Heterogeneity of room type exists across boroughs/neighborhoods 
+    - Pearson's Chi-squared test (stat:6363.5,df:440,p-value:<2.2e-16)
+- Minimum Night
+  - nonlinear effect on price/popularity
+  - 
 ```{r roomtype4, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
 dat %>%
   filter(neighbourhood_group=="Manhattan")%>%
@@ -125,21 +104,23 @@ tbl=table(dat$room_type,dat$neighbourhood)
 chisq.test(tbl)
 ```
 
-## EDA: Minimum Night
+## Data Preprocessing
 
-- Potential effect on price/popularity exist
-
-```{r night, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
-dat=dat%>%mutate(night=minimum_nights)
-dat$night=cut(dat$night,breaks = c(0,3, 7, 14, 21,28,Inf), right = TRUE)
-dat %>% ggplot(.,aes(x=night,y=log(price)))+geom_boxplot()+theme_bw()
-```
-
-## EDA: Minimum Night
-
-```{r night1, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
-dat %>% ggplot(.,aes(x=night,y=log(1+reviews_per_month)))+geom_boxplot()+theme_bw()
-```
+- Delete: id, host\_name and last\_review; 11 listings with price 0.
+- Impute: impute 0's for `reviews\_per\_month` (10052 records).
+- Categorize: minimum\_nights to 5 groups: (1,3], (3,7], (7,14], (14,21], (21,30], (30,$\infty$) days. 
+- Transformation: log(price), log(1+reviews\_per\_month). 
+- Incorporate new dataset: 
+  - shape file for neighbourhoods (NYC Opendata)
+    - relocate neighbourhoods
+    - Obtain adjacency matrix for neighhoods
+  - locations for metro stations
+    - Obtain logarithm distance to the closest metro station for each listing
+- Text cleaning:
+  - Remove punctuations, stopwords, etc.
+  - Word nomalization 
+    - Apply Porter's stemmer algorithm to keep the root
+    - e.g. luxury, luxurious $\rightarrow$ luxuri
 
 ## Model: CARBayes
 
@@ -172,77 +153,6 @@ $$\phi_k|\phi_{-k} \sim N\Big(\frac{\rho \sum_{l=1}^K w_{kl}\phi_j}{\rho \sum_{j
 	\item  $\psi_{kj}=\phi_k + \zeta_{kj}$ includes both spatial information and individual random effect. 
 \end{itemize}
 
-## Extra predictors
-
-- Incorporate shape file for nieghbourhoods from NYC Opendata.
-  - Relocate neighbourhoods (191 out of 195 neighbourhoods have airbnb listings)
-  - Obtain adjacency matrix $W=(w_{kl})$
-- Incorporate location of metro stations from NYC Opendata
-  - Obtain a predictor represent the logarithm distance to the closest metro station for each listing
-- Incorporate features from text analysis
-
-## Model Summary
-
-```{r summary1, echo=FALSE, fig.cap="Summary for Model on price", out.width = '75%'}
-knitr::include_graphics("sum1.png")
-```
-
-## Neighbourhood Effect on log(price)
-
-```{r, echo=FALSE, fig.cap="Neighbourhood Effect on log(price)", out.width = '100%'}
-knitr::include_graphics("Carprice.jpeg")
-```
-
-## Model Summary
-
-```{r summary2, echo=FALSE, fig.cap="Summary for Model on popularity", out.width = '75%'}
-knitr::include_graphics("sum2.png")
-```
-
-## Neighbourhood Effect on 
-
-```{r, echo=FALSE, fig.cap="Neighbourhood Effect on log(1+reviews per month)", out.width = '100%'}
-knitr::include_graphics("Carpop.jpeg")
-```
-
-
-A plot on maps may be helpful
-
-## Conclusion
-
-\begin{itemize}
-	\item Manhattan has the highest prices, Bronx the lowest.
-	\item "Midtown South" in Manhattan is the most luxurious, "New Drop-Midland Beach" in Staten Island is the cheapest.
-	\item "East Elmhurst" in Queen is the most popular (LaGuardia Airport), "Co-op City" in Bronx is the most unpopular.
-	\item Entire room $>$ Private room $>$ Shared room.
-	\item Higher minimum\_nights leads to lower price. 
-	\item Longer distance to metro stations reduces price.
-	
-\end{itemize}
-
-
-## Text Analysis: Preprocessing
-
-\begin{itemize}
-	\item Transform to lower case
-	\item Remove non-informative characters
-	\begin{itemize}
-	  \item Punctuations, Stopwords, Whitespace, Numbers, etc.
-	\end{itemize}
-	\item Word normalization
-	\begin{itemize}
-	  \item Porter's stemmer algorithm.
-	  \item e.g. luxury, luxurious $\rightarrow$ luxuri
-	\end{itemize}
-\end{itemize}
-
-## Text Analysis: Wordcloud of listings with price>2000
-
-```{r, echo=FALSE, fig.cap="Wordcloud", out.width = '100%'}
-knitr::include_graphics("high.jpeg")
-#knitr::include_graphics("wordcloud.jpeg")
-```
-
 ## Text Analysis: Latent Dirichlet Allocation
 
 \begin{itemize}
@@ -264,6 +174,32 @@ knitr::include_graphics("high.jpeg")
 knitr::include_graphics("LDA2.png")
 ```
 
+## Model Summary for `log(price)`
+
+```{r summary1, echo=FALSE, fig.cap="Summary for Model on price", out.width = '75%'}
+knitr::include_graphics("sum1.png")
+```
+
+## Most influencial factors for `log(price)`
+
+Model WAIC with all variables and without one variable:
+
+\begin{table}[]
+\begin{tabular}{|l|l|l|l|l|l|l|l|}
+\hline
+Model & All var & Room type & Availability & Reviews & Night & neighborhood &  \\ \hline
+WAIC  & 63998   & 85372     & 66426        & 64501   & 66023 & 70860        &  \\ \hline
+\end{tabular}
+\end{table}
+
+## Neighbourhood Effect on `log(price)`
+```{r, echo=FALSE, fig.cap="Neighbourhood Effect on log(price)", out.width = '100%'}
+knitr::include_graphics("Carprice.jpeg")
+```
+## Most valuable neighborhoods
+- Top 20 neighborhoods based on price/popularity
+Add plot here
+
 ## LDA results
 
 - 4 topics: Adjectives, Locations, Brooklyn related, Manhattan related.
@@ -272,11 +208,25 @@ knitr::include_graphics("LDA2.png")
 knitr::include_graphics("LDA.jpeg")
 ```
 
+## Text Analysis: Wordcloud of listings with price>2000
+
+```{r, echo=FALSE, fig.cap="Wordcloud", out.width = '100%'}
+knitr::include_graphics("high.jpeg")
+#knitr::include_graphics("wordcloud.jpeg")
+```
 
 
-## Word frequency
+## Conclusion
 
-
+\begin{itemize}
+	\item Manhattan has the highest prices, Bronx the lowest.
+	\item "Midtown South" in Manhattan is the most luxurious, "New Drop-Midland Beach" in Staten Island is the cheapest.
+	\item "East Elmhurst" in Queen is the most popular (LaGuardia Airport), "Co-op City" in Bronx is the most unpopular.
+	\item Entire room $>$ Private room $>$ Shared room.
+	\item Higher minimum\_nights leads to lower price. 
+	\item Longer distance to metro stations reduces price.
+	
+\end{itemize}
 
 
 ## Discussion
