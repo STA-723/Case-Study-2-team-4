@@ -23,19 +23,18 @@ geometry: margin=1.2in
 
 ##### Abstract
 
-Airbnb home rental listings vary in price and popularity; one question perninent to hosts is which listings are most successful. We explore the relationships between certain rental characteristics (including neighbourhood location) and listing price/popularity in NYC. 
 
+Airbnb home rental listings vary in price and popularity; one question perninent to hosts is which listings are most successful. We explore the relationships between certain rental characteristics (including neighbourhood location) and listing price/popularity in NYC. 
 
 #### 1. Introduction
 
-<<<<<<< HEAD
-Airbnb is a platform for short-term renting 
-=======
+
+Airbnb is a platform for short-term home renting.
+
 Our data observations consist of individual Airbnb listings in New York City. Each listing observation contains the following variables: host ID, neighbourhood group, neighbourhood, longitude/latitude, available days of the listing in a year, room type, price, minimum nights required, number of reviews, and reviews per month.
 
 Most questions of interest we address in this case study involve finding patterns in price and popularity among neighbourhoods. We find the most influential factors in the price/popularity of a listing, and look for heterogeneity among neighbourhoods and boroughs in terms of traffic, price, and room type. From this and some text analysis, we build an Airbnb listing which would be predicted to be among the most profitable in NYC.
 
->>>>>>> 3d75e00109677d00f4e5560835758b83079bc8f1
 
 #### 2. Materials and Methods
 
