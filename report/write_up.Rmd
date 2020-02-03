@@ -26,6 +26,10 @@ geometry: margin=1.2in
 
 #### 1. Introduction
 
+Our data observations consist of individual Airbnb listings in New York City. Each listing observation contains the following variables: host ID, neighbourhood group, neighbourhood, longitude/latitude, available days of the listing in a year, room type, price, minimum nights required, number of reviews, and reviews per month.
+
+Most questions of interest we address in this case study involve finding patterns in price and popularity among neighbourhoods. We find the most influential factors in the price/popularity of a listing, and look for heterogeneity among neighbourhoods and boroughs in terms of traffic, price, and room type. From this and some text analysis, we build an Airbnb listing which would be predicted to be among the most profitable in NYC.
+
 
 #### 2. Materials and Methods
 
