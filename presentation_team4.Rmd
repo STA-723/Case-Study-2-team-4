@@ -197,6 +197,13 @@ WAIC  & 63998   & 85372     & 66426        & 64501   & 66023 & 70860        &  \
 knitr::include_graphics("Carprice.jpeg")
 ```
 
+## Text Analysis: 
+- Wordcloud for price < 1000 (left) and all listings(right) 
+```{r, echo=FALSE, fig.cap="Wordcloud", out.width = '100%'}
+knitr::include_graphics("Word.jpeg")
+#knitr::include_graphics("wordcloud.jpeg")
+```
+
 ## Neighbourhood Effect on `log(price)`
 
 ```{r mapprice,cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE, out.width = '100%'}
@@ -231,13 +238,6 @@ ggmap(ny.map,alpha=0.5) +
   scale_fill_viridis_c(alpha = .7)+
   scale_color_manual(values = c( "#666666","#F8766D"))+
   guides(colour=FALSE)
-```
-
-## Text Analysis: 
-- Wordcloud for price < 1000 (left) and all listings(right) 
-```{r, echo=FALSE, fig.cap="Wordcloud", out.width = '100%'}
-knitr::include_graphics("Word.jpeg")
-#knitr::include_graphics("wordcloud.jpeg")
 ```
 
 
