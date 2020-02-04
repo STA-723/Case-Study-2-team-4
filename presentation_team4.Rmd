@@ -241,14 +241,15 @@ knitr::include_graphics("Word.jpeg")
 ```
 
 
-## Conclusions
+## Neighburhood-Specific Conclusions
 
 - Manhattan has the highest prices, Bronx the lowest.
 - Midtown South (Manhattan) = most expensive, New Drop-Midland Beach (Staten Island) = cheapest.
 - East Elmhurst (Queens) = most popular (LaGuardia Airport), Co-op City (Bronx) = least popular.
 - East Village (Manhattan) = heavest traffic, park-cemetery-etc-Brooklyn (Queens) = lightest traffic.
+- Yorkville = the most lucrative host neighborhood
 
-## Model Conclusions 
+## Variable Importance Conclusions 
 
 - Price: Entire room $>$ Private room $>$ Shared room
 - Higher minimum\_nights $\sim$ lower price
@@ -265,9 +266,9 @@ knitr::include_graphics("Word.jpeg")
 
 ## Some Interesting Inferences
 
-- Sonder homes in Manhattan are some tough competition!
+- Sonder homes in Manhattan provide some competition!
 - Vague descriptors (i.e. "great") are associated with less popularity  
-- Missingness in `availability_365` 
+- Missingness in `availability_365` is not MCAR
 
 ## Future Directions
 
