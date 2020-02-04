@@ -1,9 +1,9 @@
 ---
-title: "Best neighborhoods for Airbnb Listings in NYC"
+title: "Patterns for Airbnb Listings in NYC"
 author: "Frances Hung, Yunran Chen, Keru Wu"
 output:
-  slidy_presentation: default
   beamer_presentation: default
+  slidy_presentation: default
 ---
 
 ```{r setup, include=FALSE}
@@ -81,9 +81,7 @@ ggmap(ny.map)+
 - Room type
   - Room type matters for price but not for popularity
   - Heterogeneity of room type exists across boroughs/neighborhoods 
-    - Pearson's Chi-squared test (stat:6363.5,df:440,p-value:<2.2e-16)
-- Minimum Night
-  - nonlinear effect on price/popularity
+    - Pearson's Chi-squared test (p-value:<2.2e-16)
 ```{r roomtype4, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE}
 dat %>%
   filter(neighbourhood_group=="Manhattan")%>%
@@ -96,9 +94,12 @@ dat %>%
   theme_bw()+
   ggtitle("Heterogeneity of Room Type Across Neighborhoods (Manhattan)")
 ```
+- Minimum Night
+  - nonlinear effect on price/popularity
+
 
 ```{r testroom, eval=FALSE, message=FALSE, warning=FALSE, cache=TRUE, include=FALSE}
-tbl=table(dat$room_type,dat$neighbourhood)
+tbl=table(dat$room_type,dat$nata_droped)
 chisq.test(tbl)
 ```
 
@@ -195,15 +196,42 @@ WAIC  & 63998   & 85372     & 66426        & 64501   & 66023 & 70860        &  \
 ```{r, echo=FALSE, fig.cap="Neighbourhood Effect on log(price)", out.width = '100%'}
 knitr::include_graphics("Carprice.jpeg")
 ```
-## Most valuable neighborhoods
-- Top 20 neighborhoods based on price/popularity
 
-<<<<<<< HEAD
-## Text Analysis: Wordcloud of listings with price>2000
-=======
+## Neighbourhood Effect on `log(price)`
 
-Add plot here
->>>>>>> be9815c03b36a09739533b598503d80543c75a3a
+```{r mapprice,cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE, out.width = '100%'}
+library(ggmap)
+library(sf)
+load("Model.RData")
+phi_price=s1$samples$phi%>%apply(.,2,median)
+phi_pop=s2$samples$phi%>%apply(.,2,median)
+phi_tbl=tibble(phi_price,phi_pop,nata_droped=levels(dat$nata_droped))
+#res_dat%>%group_by(ntaname,shape_area,neighbourhood_group)%>%summarise(count_=n())%>%
+#  mutate(traffic=log(count_)-log(shape_area))%>%arrange(desc(traffic))
+
+load("resultdataset.rdata")
+
+ggtbl=left_join(p%>%mutate(nata_droped=as.character(ntaname)),phi_tbl)
+ggtbl=ggtbl%>%mutate(popid=0,priceid=0)
+ggtbl[c(which.max(ggtbl$phi_pop),which(ggtbl$nata_droped=="Yorkville")),"popid"]=1
+ggtbl[c(which.max(ggtbl$phi_price),which(ggtbl$nata_droped=="Yorkville")),"priceid"]=1
+ggmap(ny.map,alpha=0.5) + 
+  #coord_sf(crs = st_crs(3857)) + # force the ggplot2 map to be in 3857
+  geom_sf(data = ggtbl, aes(fill = phi_price,geometry=geometry,colour=factor(priceid)), inherit.aes = FALSE)+
+  scale_fill_viridis_c(alpha = .7)+
+  scale_color_manual(values = c( "#666666","#F8766D"))+
+  guides(colour=FALSE)
+```
+
+## Neighbourhood Effect on Popularity
+
+```{r mappop, echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE, out.width='100%'}
+ggmap(ny.map,alpha=0.5) + 
+  geom_sf(data = ggtbl, aes(fill = phi_pop,geometry=geometry,colour=factor(popid)), inherit.aes = FALSE)+
+  scale_fill_viridis_c(alpha = .7)+
+  scale_color_manual(values = c( "#666666","#F8766D"))+
+  guides(colour=FALSE)
+```
 
 ## Text Analysis: 
 - Wordcloud for price < 1000 (left) and all listings(right) 
@@ -213,12 +241,12 @@ knitr::include_graphics("Word.jpeg")
 ```
 
 
-## EDA Conclusions
+## Conclusions
 
 - Manhattan has the highest prices, Bronx the lowest.
 - Midtown South (Manhattan) = most expensive, New Drop-Midland Beach (Staten Island) = cheapest.
 - East Elmhurst (Queens) = most popular (LaGuardia Airport), Co-op City (Bronx) = least popular.
-
+- East Village (Manhattan) = heavest traffic, park-cemetery-etc-Brooklyn (Queens) = lightest traffic.
 
 ## Model Conclusions
 
