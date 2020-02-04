@@ -1,7 +1,9 @@
 ---
 title: "Best neighborhoods for Airbnb Listings in NYC"
 author: "Frances Hung, Yunran Chen, Keru Wu"
-output: beamer_presentation
+output:
+  slidy_presentation: default
+  beamer_presentation: default
 ---
 
 ```{r setup, include=FALSE}
@@ -211,26 +213,33 @@ knitr::include_graphics("Word.jpeg")
 ```
 
 
-## Conclusion
+## EDA Conclusions
 
-\begin{itemize}
-	\item Manhattan has the highest prices, Bronx the lowest.
-	\item "Midtown South" in Manhattan is the most luxurious, "New Drop-Midland Beach" in Staten Island is the cheapest.
-	\item "East Elmhurst" in Queen is the most popular (LaGuardia Airport), "Co-op City" in Bronx is the most unpopular.
-	\item Entire room $>$ Private room $>$ Shared room.
-	\item Higher minimum\_nights leads to lower price. 
-	\item Longer distance to metro stations reduces price.
-	
-\end{itemize}
+- Manhattan has the highest prices, Bronx the lowest.
+- Midtown South (Manhattan) = most expensive, New Drop-Midland Beach (Staten Island) = cheapest.
+- East Elmhurst (Queens) = most popular (LaGuardia Airport), Co-op City (Bronx) = least popular.
 
 
-## Discussion
+## Model Conclusions
 
-- MICE: missing data
-- Include `last_review`: spatial temporal model.
-- Nonlinear model: spline regression for $x_{kj}$.
-- More spatial information (point-reference): longitude and latitude
-- Add random effect for `host_id`. 
+- Entire room $>$ Private room $>$ Shared room.
+- Higher minimum\_nights leads to lower price. 
+- Longer distance to metro stations reduces price.
+
+
+## A Model Airbnb: One Example
+
+- Cozy+Spacious Loft in Upper East Manhattan 
+- Location: Yorkville
+
+
+## Future Directions
+
+- `availability_365` missing data
+- Spatial-temporal model (`last_review`)
+- Nonlinear model for minimum night stay
+- Point reference spatial model (longitude and latitude)
+- Random effect for `host_id`. 
 	
 
 
