@@ -1,5 +1,5 @@
 ---
-title: "Patterns for Airbnb Listings in NYC"
+title: "Patterns of Airbnb Listings in NYC"
 author: "Frances Hung, Yunran Chen, Keru Wu"
 output:
   beamer_presentation: default
@@ -34,10 +34,12 @@ dat$reviews_per_month[dat$number_of_reviews==0]=0
 ## Introduction
 
 - Data: 2019 Airbnb listings in NYC, 48895 observations.
-- Goal: 
-  - Patterns for price/popularity: influential factors? quantify influence?
+- Goal: Explore Patterns of Listings
+  - Care about price and popularity
+  - What are the influential factors? quantify influence?
   - Find the most valuable neighborhoods based on price/popularity balance
-  - Post a listing: choice of location and name
+  - Set the price of the listing
+  - Name the listing
 - Model: 
   - CARBayes for `log(price)` and `log(1+reviews_per_month)` respectively.
   - LDA for text analysis
@@ -204,6 +206,15 @@ knitr::include_graphics("Word.jpeg")
 #knitr::include_graphics("wordcloud.jpeg")
 ```
 
+
+## Neighburhood-Specific Conclusions
+
+- Manhattan has the highest prices, Bronx the lowest.
+- Midtown South (Manhattan) = most expensive, New Drop-Midland Beach (Staten Island) = cheapest.
+- East Elmhurst (Queens) = most popular (LaGuardia Airport), Co-op City (Bronx) = least popular.
+- East Village (Manhattan) = heavest traffic, park-cemetery-etc-Brooklyn (Queens) = lightest traffic.
+- Yorkville = the most lucrative host neighborhood
+
 ## Neighbourhood Effect on `log(price)`
 
 ```{r mapprice,cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE, out.width = '100%'}
@@ -240,14 +251,6 @@ ggmap(ny.map,alpha=0.5) +
   guides(colour=FALSE)
 ```
 
-
-## Neighburhood-Specific Conclusions
-
-- Manhattan has the highest prices, Bronx the lowest.
-- Midtown South (Manhattan) = most expensive, New Drop-Midland Beach (Staten Island) = cheapest.
-- East Elmhurst (Queens) = most popular (LaGuardia Airport), Co-op City (Bronx) = least popular.
-- East Village (Manhattan) = heavest traffic, park-cemetery-etc-Brooklyn (Queens) = lightest traffic.
-- Yorkville = the most lucrative host neighborhood
 
 ## Variable Importance Conclusions 
 
