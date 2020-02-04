@@ -53,7 +53,7 @@ AB_NA<-AB %>%
 
 ```{r,cache=TRUE}
 mice_data<-mice(AB_NA,m=4)
-densityplot(mice_data)
+#densityplot(mice_data)
 #stripplot(mice_data,availability_365~last_year_rev+rmtype_number+neighborhood_grp_number+neighborhood_number+price+reviews_per_month,pch=18,cex=1)
 ```
 Our plots of covariates vs. imputed data tell us that these imputed values are plausible values.
@@ -64,7 +64,7 @@ Our plots of covariates vs. imputed data tell us that these imputed values are p
 Both models without the spatial component, but the model with imputed data did worse. This may because there is in fact a pattern to missingness in the availability_365 variable when we assumed not.
 
 ```{r}
-modelFit1<-with(mice_data,lm(price ~ room_type + neighbourhood_group + reviews_per_month + availability_365 + minimum_nights))
+modelFit1<-with(mice_data,lm(price ~ room_type+neighbourhood_group + reviews_per_month + availability_365 + minimum_nights))
 
 summary(pool(modelFit1))
 
@@ -85,7 +85,7 @@ mean(AIC1)
 ```
 
 ```{r}
-modelFitInit<-lm(price ~  reviews_per_month + availability_365 +room_type+neighbourhood_group,data=AB_NA)
+modelFitInit<-lm(price ~  reviews_per_month + availability_365 +room_type+neighbourhood_group,data=AB)
 summary(modelFitInit)
 AIC(modelFitInit)
 anova(modelFitInit)
@@ -100,7 +100,7 @@ AIC(modelFitInit)
 ```
 
 ```{r}
-modelFitInit<-lmer(price ~ room_type:neighbourhood_group + (1|neighbourhood)+reviews_per_month + availability_365 + minimum_nights,data=AB_NA)
+modelFitInit<-lmer(price ~ room_type + (1|neighbourhood_group)+reviews_per_month + availability_365 + minimum_nights,data=AB_NA)
 summary(modelFitInit)
 AIC(modelFitInit)
 ```
@@ -125,6 +125,8 @@ ggplot(data=dat,mapping = aes(x=word_count,y=log(1+number_of_reviews)))+geom_poi
 ```
 
 ```{r}
+load("resultdataset.rdata")
+dat<- res_dat
 library(wordcloud)
 top_10<-dat %>% mutate(reviews_per_month=replace_na(reviews_per_month,0)) %>% filter(reviews_per_month>quantile(reviews_per_month,c(0.9)))
 
@@ -135,6 +137,8 @@ top_queens<-dat %>% filter(neighbourhood_group=="Queens") %>% mutate(reviews_per
 top_brooklyn<-dat %>% filter(neighbourhood_group=="Brooklyn") %>% mutate(reviews_per_month=replace_na(reviews_per_month,0)) %>% filter(reviews_per_month>quantile(reviews_per_month,c(0.75)))
 
 top_bronx<-dat %>% filter(neighbourhood_group=="Bronx") %>% mutate(reviews_per_month=replace_na(reviews_per_month,0)) %>% filter(reviews_per_month>quantile(reviews_per_month,c(0.75)))
+
+top_yorkville <- dat %>% filter(ntaname=="Yorkville") %>% mutate(reviews_per_month=replace_na(reviews_per_month,0)) %>% filter(reviews_per_month>quantile(reviews_per_month,c(0.7)))
 
 
 top_words<-function(dat) {
@@ -160,6 +164,7 @@ top_words(top_manhattan)
 top_words(top_queens)
 top_words(top_brooklyn)
 top_words(top_bronx)
+top_words(top_yorkville)
 ```
 
 ## Linear Models)

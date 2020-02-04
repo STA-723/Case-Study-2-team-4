@@ -220,11 +220,12 @@ knitr::include_graphics("Word.jpeg")
 - East Elmhurst (Queens) = most popular (LaGuardia Airport), Co-op City (Bronx) = least popular.
 
 
-## Model Conclusions (Price)
+## Model Conclusions 
 
-- Entire room $>$ Private room $>$ Shared room.
-- Higher minimum\_nights leads to lower price. 
-- Longer distance to metro stations reduces price.
+- Price: Entire room $>$ Private room $>$ Shared room
+- Higher minimum\_nights $\sim$ lower price
+- Shorter distance to metro stations, higher availability $\sim$ higher price
+- Popularity: metro distance no longer significant
 
 
 ## A Model Airbnb: One Example
@@ -232,6 +233,7 @@ knitr::include_graphics("Word.jpeg")
 - Spacious, Charming Loft in Upper East Side
 - Location: Yorkville
 - Entire Home, $130/night, between 200-300 available days
+- Close to metro station
 
 ## Some Interesting Inferences
 
