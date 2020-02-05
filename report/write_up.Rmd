@@ -73,10 +73,7 @@ Heterogeneity across neighbourhoods is shown in Fig \ref{fig:car1-plot} and \ref
 Our text analysis (Fig \ref{fig:wordcloud1}, \ref{fig:wordcloud2}) indicates some critical words: luxury, manhattan, beautiful (Note that we use stemming algorithm so we get stem of words rather than words themselves). We further carry out LDA to find latent topics in listing names. We choose 4 topics which is not too complicated and has a reasonable result (Fig \ref{fig:LDA}). The 4 topics can be categorized as adjectives, locations, Brooklyn related and Manhattan related. If we further add these 4 topics into our model (4 indicators), we conclude that Brooklyn and Manhattan has a positive significant coefficient, while the other two is significantly negative. 
 
 
-
-##### 3.4 Conclusion
-
-##### 3.5 Sensitivity Analysis
+##### 3.4 Sensitivity Analysis
 
 
 #### 4. Discussion
