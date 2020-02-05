@@ -8,14 +8,14 @@ output:
   html_document:
     keep_md: yes
     fig_caption: TRUE
-header-includes:  
-  \usepackage{float} 
-  \floatplacement{figure}{H}
 urlcolor: blue
 linkcolor: blue
 bibliography: bibliography.bib
 link-citations: true
 geometry: margin=1.2in 
+header-includes: 
+  \usepackage{float} 
+  \floatplacement{figure}{H}
 ---
 \fontsize{10}{11}
 \selectfont
@@ -33,18 +33,6 @@ From the perspective of a host, we are interested in exploring the patterns in p
 (Most questions of interest we address in this case study involve finding patterns in price and popularity among neighbourhoods. We find the most influential factors in the price/popularity of a listing, and look for heterogeneity among neighbourhoods and boroughs in terms of traffic, price, and room type. From this and some text analysis, we build an Airbnb listing which would be predicted to be among the most profitable in NYC.)
 
 #### 2. Materials and Methods
-
-##### 2.1 Exploratory Data Analysis
-
-
-##### 2.2 Data Preprocessing and Missing data manipulation
-
-The availability_365 variable has zero-valued observations which may correspond to hosts who temporarily take their listings off the market. Comparing the distribution of other variables for zero-valued vs. positive-valued availability_365 observations suggests that the data may be missing at random because we don't see an obvious pattern in missingness. Using MICE [@buuren2010mice], we impute the data, treating the zero-valued observations as missing values. 
-
-Our model using the imputed data had indistinguishable AIC with our model without imputed data. As a result, we choose to use the original dataset and in future work, explore missingness of availability_365 further.  
-
-##### 2.3 Main Model
-
 Since the price and popularity are strongly related to the location of listings and neighboods provides a natural boundary for spatial characteristics of listings, we consider a multilevel conditional autoregressive Bayesian model (CARBayes)[@lee2013carbayes] based on neighbood units as follows:
 $$ \begin{aligned}
  	Y_{kj}|\mu_{kj} \sim f(y_{kj}|\mu_{kj}, \nu^2), \ \ \ &k= \text{neighbourhood}
@@ -58,16 +46,19 @@ where $w_{kl}$ is known from data with $w_{kl}=1$ denotes neighbourhood $k$ is a
 
 We consider `log(price)` and `log(1+review_per_month)`(popularity) as response variable and model them separately. We include room type, price, minimum nights required, price/popularity as predictors. Additionally, we incorporate the logarithm distance from a listing to the nearest metro station (from extra data source) and extracted features from LDA model as predictors. To obtain the adjacency matrix for neighbourhoods, we incorporate shape file from NYC Opendata and re-allocate listings to new neighbourhoods.
 
-To carry out text analysis on names of listings, we consider using text mining methods including Porter's stemmer algorithm [@porter2001snowball], wordcloud, Latent Dirichlet Allocation [@blei2003latent], etc. We first preprocess these names by transforming them to lower case and removing non-informative characters (e.g. punctuations, stopwords, whitespace, numbers). Then we use Porter's stemmer algorithm for word normalization, which allows us to extract all the common roots of informative words. Based on the result, we further execute word frequency analysis for different boroughs, and use wordcloud to display frequent words. Moreover, we implement LDA to build up a Bayesian generative model, assigning each word a weight of related topics (e.g. adjectives, locations). Features obtained from LDA will be included in our multilevel CAR regression model. 
+To carry out text analysis on names of listings, we consider using text mining methods including Porter's stemmer algorithm , wordcloud, Latent Dirichlet Allocation [@blei2003latent], etc. Based on the result, we further execute word frequency analysis for different boroughs, and use wordcloud to display frequent words. Moreover, we implement LDA to build up a Bayesian generative model, assigning each word a weight of related topics (e.g. adjectives, locations). Features obtained from LDA will be included in our multilevel CAR regression model. 
 
 #### 3. Results
-
 ##### 3.1 Exploratory Data Analysis
+Figures \ref{fig:mapprice,fig:mappop,fig:maptraffic} suggest a clear spatial structure for price, popularity and traffic. Most high-priced listings are located in midtown and downtown Manhattan, while some of them also lie in the part in Brooklyn that is closed to. Similar pattern is discovered for traffic. Most popular neighborhood locates around LGA airport. Figure \ref{fig:roomtype4} shows a significant heterogeneity across neighborhoods and boroughs. In addition, Figures \ref{fig:roomtype1,fig:roomtype2} demonstrate that the room type matters for price but not for popularity. We can also see the heterogeneity of room type across boroughs/neighborhoods as shown in Figure. A Pearson's Chi-squared test (p-value < 2.2e-16) is conducted to further support the conclusion. Figure \ref{fig:night,fig:night1} suggest a non-linear effect on price/popularity. 
 
-We obtain an intuitive understanding of the data based on plots of price, popularity and traffic (Figs \ref{} ). Most high-priced listings are located in Manhattan, while some of them also lie in Brooklyn. Similar pattern is discovered for traffic. In addition, EDA plots for room type (Fig \ref{}) demonstrate that it matters for price but not for popularity. We can also see the heterogeneity of room type across boroughs/neighborhoods. Wordcloud (Fig \ref{}) implies some high-frequency words in high-priced listings: luxury, manhattan, apartment, etc. 
+##### 3.2 Data Preprocessing and Missing data manipulation
 
+Based on the results from EDA, we consider the following data preprocessing. We remove 11 listings with price equal to 0. We impute 0 for `reviews_per_month` for 10052 listings with NA value. We categorize the `minimum_night` into 5 groups by the first three days and weeks. We consider the logarithm transformation for the response variable `price` and `reviews_per_month`. In addition, we incorporate shape files for neighbourhoods in New York \footnote{<https://data.cityofnewyork.us/City-Government/Neighborhood-Tabulation-Areas-NTA-/cpf4-rkhq>} and reallocate the listings' neighborhood based on the latitude and longitude. By introducing new data, we are able to obtain the adjacency matrix of neighborhoods in New York. To account for the heterogeneity of spatial effects across listings within the same neighborhood, we introduce a new predictor which is the logarithm of distance from a listing to the closest metro\footnote{Locations of metro stations: <https://data.cityofnewyork.us/Transportation/Subway-Stations/arq3-7z49>}.
 
-##### 3.2 Main Results
+For text cleaning, we first preprocess the listings' names by transforming them to lower case and removing non-informative characters such as punctuations, stopwords, whitespace, numbers. Then we apply Porter's stemmer algorithm [@porter2001snowball] for word normalization, allowing for extracting all the common roots of informative words. 
+
+##### 3.3 Main Results
 
 According to model coefficient estimation (Fig \ref{fig:car1-sum}), our multilevel CAR model on price demonstrates the following patterns. Numbers in brackets are median of corresponding coefficients. For room type, entire room (0) is more expensive than private ones (-0.7) and shared ones (-1.1), with shared room being the cheapest. Manhattan (0.57) stands out to be the most luxurious borough, and Bronx (0) has the lowest price. Availability (0.12) is positively related to price while reviews per month (-0.0) is negatively related. In addition, more strict requirement on minimum nights results in lower price, which aligns with our common sense. And longer distance to metro stations also reduces the price (-0.005). Table \ref{table:1} shows the WAIC of different models, which allow us to choose the most influential factor for price(room type).
 
@@ -77,15 +68,113 @@ Heterogeneity across neighbourhoods is shown in Fig \ref{fig:car1-plot} and \ref
 
 Our text analysis (Fig \ref{fig:wordcloud1}, \ref{fig:wordcloud2}) indicates some critical words: luxury, manhattan, beautiful (Note that we use stemming algorithm so we get stem of words rather than words themselves). We further carry out LDA to find latent topics in listing names. We choose 4 topics which is not too complicated and has a reasonable result (Fig \ref{fig:LDA}). The 4 topics can be categorized as adjectives, locations, Brooklyn related and Manhattan related. If we further add these 4 topics into our model (4 indicators), we conclude that Brooklyn and Manhattan has a positive significant coefficient, while the other two is significantly negative. 
 
+Wordcloud (Fig \ref{}) implies some high-frequency words in high-priced listings: luxury, manhattan, apartment, etc. 
 
-##### 3.3 Sensitivity Analysis
+##### 3.4 Sensitivity Analysis
+
+The availability_365 variable has zero-valued observations which may correspond to hosts who temporarily take their listings off the market. Comparing the distribution of other variables for zero-valued vs. positive-valued availability_365 observations suggests that the data may be missing at random because we don't see an obvious pattern in missingness. Using MICE [@buuren2010mice], we impute the data, treating the zero-valued observations as missing values. 
+
+Our model using the imputed data had indistinguishable AIC with our model without imputed data. As a result, we choose to use the original dataset and in future work, explore missingness of availability_365 further.  
 
 #### 4. Answers to Questions
 
+See \ref{fig:phiprice}\ref{fig:phipop}
+
 #### 5. Discussion
+
+\newpage
 
 #### Appendix
 
+##### EDA
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.height = 5)
+library(corrplot)
+library(naniar)
+library(ggplot2)
+library(dplyr)
+library(tibble)
+library(tidyr)
+library(purrr)
+library(lme4)
+library(jpeg)
+library(ggpubr)
+library(grid)
+library(stringr)
+library("ggmap")
+library(ggmosaic)
+library(MASS)
+```
+
+```{r pre, include=FALSE}
+data = read.csv('/Users/yunranchen/GoDuke/20Spring/STAT723CaseStudy/Case-Study-2-team-4/AB_NYC_2019.csv', na.strings = c("", "NA"))
+dat=data%>%filter(price!=0)
+dat$reviews_per_month[dat$number_of_reviews==0]=0
+```
+
+```{r pricemap, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE,out.width = '70%',fig.align='center',fig.cap="\\label{fig:mapprice} Distribution of log(price)"}
+jet.colors <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
+ny.map=get_map(location = c(left=-74.2445,right=-73.71298, bottom= 40.49975,top=40.9131),color = "bw",maptype = "toner",source = "stamen")
+ggmap(ny.map)+
+  geom_point(data = dat,
+                 aes(x = longitude, y = latitude, color=log(price)),cex = 0.2,alpha=0.5) + 
+  scale_colour_gradientn(colors = jet.colors(7), limits = c(3,7))
+
+```
+
+```{r popmap, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE,out.width = '70%',fig.align='center',fig.cap="\\label{fig:mappop} Distribution of log(1+reviews/mon)"}
+ggmap(ny.map)+
+  geom_point(data = dat,
+                 aes(x = longitude, y = latitude, color=log(1+reviews_per_month)),cex = 0.2,alpha=0.5) + 
+  scale_colour_gradientn(colors = jet.colors(7), limits = c(0,3))
+```
+
+```{r trafficmap, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE,out.width = '70%',fig.align='center',fig.cap="\\label{fig:maptraffic} 2D-Density estimation"}
+ggmap(ny.map)+
+  stat_density2d(data = dat,
+                 aes(x = longitude, y = latitude,fill = ..level.., alpha = ..level..), 
+                 geom = "polygon") + 
+  scale_fill_gradient(low = "green", high = "red")
+```
+
+```{r roomtype1, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE,out.width = '70%',fig.align='center',fig.cap="\\label{fig:roomtype1} Association between price and room type"}
+dat%>%ggplot(data=.,aes(x=room_type,y=log(price)))+geom_boxplot()+theme_bw()
+```
+
+```{r roomtype2, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE,out.width = '70%',fig.align='center',fig.cap="\\label{fig:roomtype2} Association between review/mon and room type"}
+dat%>%ggplot(data=.,aes(x=room_type,y=log(1+reviews_per_month)))+geom_boxplot()+theme_bw()
+```
+
+```{r roomtype4, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE,out.width = '70%',fig.align='center',fig.cap="\\label{fig:roomtype4} Heterogeneity of Room Type Across Neighborhoods (Manhattan)"}
+dat %>%
+  filter(neighbourhood_group=="Manhattan")%>%
+  group_by(neighbourhood,room_type) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))%>%ungroup()%>%
+  mutate(neighbourhood=as.numeric(neighbourhood))%>%
+  ggplot(data=.)+
+  geom_area(aes(x=neighbourhood,y=freq,fill=room_type),stat="identity",position = "stack")+
+  theme_bw()
+```
+
+```{r testroom, eval=FALSE, message=FALSE, warning=FALSE, cache=TRUE, include=FALSE}
+tbl=table(dat$room_type,dat$neighbourhood)
+chisq.test(tbl)
+```
+
+
+```{r night, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE,out.width = '70%',fig.align='center',fig.cap="\\label{fig:night} Association between price and minimum night"}
+dat=dat%>%mutate(night=minimum_nights)
+dat$night=cut(dat$night,breaks = c(0,3, 7, 14, 21,28,Inf), right = TRUE)
+dat %>% ggplot(.,aes(x=night,y=log(price)))+geom_boxplot()+theme_bw()
+```
+
+```{r night1, cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE,out.width = '70%',fig.align='center',fig.cap="\\label{fig:night1} Association between review/month and minimum night"}
+dat %>% ggplot(.,aes(x=night,y=log(1+reviews_per_month)))+geom_boxplot()+theme_bw()
+```
+
+##### CARBayes
 
 ```{r, echo=F, include=F}
 
@@ -145,9 +234,6 @@ dat$topic4 = grepl("apt", dat$name) | grepl("bedroom", dat$name) | grepl("manhat
 ```
 
 
-
-
-
 ```{r Price CAR, echo=FALSE,out.width = '70%',  cache=TRUE, fig.align='center',fig.cap="\\label{fig:car1-sum} CAR Model on price - Model Summary"}
 knitr::include_graphics("sum1.png")
 ```
@@ -158,7 +244,7 @@ knitr::include_graphics("sum2.png")
 ```
 
 
-```{r, echo=F, include=F}
+```{r, echo=F, include=F,cache=T}
 library(CARBayes)
 s =S.CARmultilevel(formula=log(price) ~  room_type  + availability_365 + log(1 + reviews_per_month) + night + metrodist + topic1 + topic2 + topic3 + topic4,
                 family = 'gaussian', data = dat, ind.area=dat$ind_area,
@@ -187,14 +273,13 @@ phidf$borough[phidf$key %in% Bky] = 'Brooklyn'
 ```
 
 ```{r Price CAR plot, echo=FALSE,cache=TRUE, fig.width = 8,fig.cap="\\label{fig:car1-plot} CAR Model on price - Neighbourhoods"}
-library(ggplot2)
 ggplot(phidf, aes(x = borough, y = value, fill = key))+
   geom_boxplot(show.legend = FALSE, lwd= 0.1, outlier.size=0.1)+
-  theme(axis.text.x = element_text(hjust = 1, size=10))
+  theme(axis.text.x = element_text(hjust = 1, size=10))+theme_bw()
 
 ```
 
-```{r, echo=F, include=F}
+```{r m2, include=FALSE,cache=T}
 
 ss = s2$samples
 
@@ -218,10 +303,9 @@ phidf$borough[phidf$key %in% Bky] = 'Brooklyn'
 ```
 
 ```{r Pop CAR plot, echo=FALSE,cache=TRUE, fig.width = 8,fig.cap="\\label{fig:car2-plot} CAR Model on popularity - Neighbourhoods"}
-library(ggplot2)
 ggplot(phidf, aes(x = borough, y = value, fill = key))+
   geom_boxplot(show.legend = FALSE, lwd= 0.1, outlier.size=0.1)+
-  theme(axis.text.x = element_text(hjust = 1, size=10))
+  theme(axis.text.x = element_text(hjust = 1, size=10))+theme_bw()
 
 ```
 
@@ -324,3 +408,37 @@ text_top_terms %>%
 knitr::include_graphics("LDA.jpeg")
 ```
 
+
+```{r mapprice,cache=TRUE,echo=FALSE, message=FALSE, warning=FALSE, out.width = '100%', fig.cap="\\label{fig:phiprice} Neighborhoods' effects for price"}
+load("/Users/yunranchen/GoDuke/20Spring/STAT723CaseStudy/Case-Study-2-team-4/Model.RData")
+phi_price=s1$samples$phi%>%apply(.,2,median)
+phi_pop=s2$samples$phi%>%apply(.,2,median)
+phi_tbl=tibble(phi_price,phi_pop,nata_droped=levels(dat$nata_droped))
+#res_dat%>%group_by(ntaname,shape_area,neighbourhood_group)%>%summarise(count_=n())%>
+#  mutate(traffic=log(count_)-log(shape_area))%>%arrange(desc(traffic))
+
+load("/Users/yunranchen/GoDuke/20Spring/STAT723CaseStudy/Case-Study-2-team-4/resultdataset.rdata")
+
+ggtbl=left_join(p%>%mutate(nata_droped=as.character(ntaname)),phi_tbl)
+ggtbl=ggtbl%>%mutate(popid=0,priceid=0)
+ggtbl[c(which.max(ggtbl$phi_pop),which(ggtbl$nata_droped=="Yorkville")),"popid"]=1
+ggtbl[c(which.max(ggtbl$phi_price),which(ggtbl$nata_droped=="Yorkville")),"priceid"]=1
+ggmap(ny.map,alpha=0.5) + 
+  #coord_sf(crs = st_crs(3857)) + # force the ggplot2 map to be in 3857
+  geom_sf(data = ggtbl, aes(fill = phi_price,geometry=geometry,colour=factor(priceid)), inherit.aes = FALSE)+
+  scale_fill_viridis_c(alpha = .7)+
+  scale_color_manual(values = c( "#666666","#F8766D"))+
+  guides(colour=FALSE)
+```
+
+```{r mappop, echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE, out.width='100%', fig.cap="\\label{fig:phipop} Neighborhoods' effects for popularity"}
+ggmap(ny.map,alpha=0.5) + 
+  geom_sf(data = ggtbl, aes(fill = phi_pop,geometry=geometry,colour=factor(popid)), inherit.aes = FALSE)+
+  scale_fill_viridis_c(alpha = .7)+
+  scale_color_manual(values = c( "#666666","#F8766D"))+
+  guides(colour=FALSE)
+```
+
+
+
+#### References
