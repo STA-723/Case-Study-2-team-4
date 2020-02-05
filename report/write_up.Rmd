@@ -50,7 +50,7 @@ To carry out text analysis on names of listings, we consider using text mining m
 
 #### 3. Results
 ##### 3.1 Exploratory Data Analysis
-Figures \ref{fig:mapprice,fig:mappop,fig:maptraffic} suggest a clear spatial structure for price, popularity and traffic. Most high-priced listings are located in midtown and downtown Manhattan, while some of them also lie in the part in Brooklyn that is closed to. Similar pattern is discovered for traffic. Most popular neighborhood locates around LGA airport. Figure \ref{fig:roomtype4} shows a significant heterogeneity across neighborhoods and boroughs. In addition, Figures \ref{fig:roomtype1,fig:roomtype2} demonstrate that the room type matters for price but not for popularity. We can also see the heterogeneity of room type across boroughs/neighborhoods as shown in Figure. A Pearson's Chi-squared test (p-value < 2.2e-16) is conducted to further support the conclusion. Figure \ref{fig:night,fig:night1} suggest a non-linear effect on price/popularity. 
+Figures \ref{fig:mapprice},\ref{fig:mappop},\ref{fig:maptraffic} suggest a clear spatial structure for price, popularity and traffic. Most high-priced listings are located in midtown and downtown Manhattan, while some of them also lie in the part in Brooklyn that is closed to. Similar pattern is discovered for traffic. Most popular neighborhood locates around LGA airport. Figure \ref{fig:roomtype4} shows a significant heterogeneity across neighborhoods and boroughs. In addition, Figures \ref{fig:roomtype1},\ref{fig:roomtype2} demonstrate that the room type matters for price but not for popularity. We can also see the heterogeneity of room type across boroughs/neighborhoods as shown in Figure. A Pearson's Chi-squared test (p-value < 2.2e-16) is conducted to further support the conclusion. Figure \ref{fig:night,fig:night1} suggest a non-linear effect on price/popularity. 
 
 ##### 3.2 Data Preprocessing and Missing data manipulation
 
@@ -81,6 +81,12 @@ Our model using the imputed data had indistinguishable AIC with our model withou
 See \ref{fig:phiprice}\ref{fig:phipop}
 
 #### 5. Discussion
+
+Our multilevel CAR model incorporates both spatial information and individual random effects, which successfully discovers patterns across neighborhoods and account for individual effects. However, our model may lose information from exact locations (latitude, longitude) of listings and we didn't include temporal information in our model. 
+
+From this perspective, a direct extension of our model is using spatial temporal model that incorporates both information of locations as well as time (e.g. last review). Another promising direction is to use point reference models like Gaussian Process to include distance between each two listings. 
+
+We assume linear relationship between other predictors and outcome, which might not be the case. Therefore considering nonlinear model using spline regression such as GAM would be more reasonable. Another critical part is how to impute missing data. Although MICE doesn't perform better than imputing with 0, discovering other imputation methods could be helpful. Moreover, different hosts have different number of listings, we can further try approaches that accounts for their influence (e.g. random effects).
 
 \newpage
 
