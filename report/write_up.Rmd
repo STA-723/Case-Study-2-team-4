@@ -26,14 +26,13 @@ Airbnb home rental listings vary in price and popularity; one question perninent
 
 #### 1. Introduction
 
-Airbnb is a platform provides more personalized home rentals for travelers compared with hotels. Our data observations consist of 48,895 individual Airbnb listings in New York City. Each listing observation contains the following variables: host ID, neighbourhood group, neighbourhood, longitude/latitude, available days of the listing in a year, room type, price, minimum nights required, number of reviews, and reviews per month.
+Airbnb is a platform provides more personalized home rentals for travelers compared with hotels. Our data observations consist of 48,895 individual Airbnb listings in New York City. Each listing observation contains the following variables: host ID, neighbourhood group, neighbourhood, longitude/latitude, available days of the listing in a year, room type, price, minimum nights required, number of reviews, and reviews per month. 
 
 From the perspective of a host, we are interested in exploring the patterns in price and popularity. Specifically, we are interested in (1) quantifying the influential factors in the price/popularity and evaluating their influence (2) exploring the most valuable neighborhoods with adjusting the influential factors (3) choose a location and set a price for the listing (4) name the listing. 
 
-(Most questions of interest we address in this case study involve finding patterns in price and popularity among neighbourhoods. We find the most influential factors in the price/popularity of a listing, and look for heterogeneity among neighbourhoods and boroughs in terms of traffic, price, and room type. From this and some text analysis, we build an Airbnb listing which would be predicted to be among the most profitable in NYC.)
-
 #### 2. Materials and Methods
-Since the price and popularity are strongly related to the location of listings and neighboods provides a natural boundary for spatial characteristics of listings, we consider a multilevel conditional autoregressive Bayesian model (CARBayes)[@lee2013carbayes] based on neighbood units as follows:
+
+Since the price and popularity are strongly related to the location of listings (Figure \ref{fig:mapprice}, \ref{fig:mappop}) and neighboods provides a natural boundary for spatial characteristics of listings, we consider a multilevel conditional autoregressive Bayesian model (CARBayes)[@lee2013carbayes] based on neighbood units as follows:
 $$ \begin{aligned}
  	Y_{kj}|\mu_{kj} \sim f(y_{kj}|\mu_{kj}, \nu^2), \ \ \ &k= \text{neighbourhood}
 =1,...,K\\
@@ -44,19 +43,18 @@ where $\beta$ represents the potential effect of predictor $x_{kj}$, with a prio
 $$\phi_k|\phi_{-k} \sim N\Big(\frac{\rho \sum_{l=1}^K w_{kl}\phi_j}{\rho \sum_{j=1}^K w_{kl}+1-\rho}, \frac{\tau^2}{\rho\sum_{j=1}^Kw_{kl}+1-\rho}\Big)$$
 where $w_{kl}$ is known from data with $w_{kl}=1$ denotes neighbourhood $k$ is adjacent to neighbourhood $l$, and $0$ otherwise; $\rho\sim U(0,1)$ capture the relation between neighbourhood effects. This prior captures the spatial structure among neighbourhoods for each neighborhoods' effect is centered at the weighted sum of the effects from its neighbors.
 
-We consider `log(price)` and `log(1+review_per_month)`(popularity) as response variable and model them separately. We include room type, price, minimum nights required, price/popularity as predictors. Additionally, we incorporate the logarithm distance from a listing to the nearest metro station (from extra data source) and extracted features from LDA model as predictors. To obtain the adjacency matrix for neighbourhoods, we incorporate shape file from NYC Opendata and re-allocate listings to new neighbourhoods.
+We consider `log(price)` and `log(1+review_per_month)`(popularity) as response variable and model them separately. We include room type, price, minimum nights required, price/popularity as predictors based on EDA results. Additionally, we incorporate the logarithm distance from a listing to the nearest metro station to account for the heterogeneity of individual spatial effect within the same neighborhood. Also, we extracted features from names of listings by applying Latent Dirichlet Allocation (LDA) [@blei2003latent] model and introduced these features as predictors. 
 
-To carry out text analysis on names of listings, we consider using text mining methods including Porter's stemmer algorithm , wordcloud, Latent Dirichlet Allocation [@blei2003latent], etc. Based on the result, we further execute word frequency analysis for different boroughs, and use wordcloud to display frequent words. Moreover, we implement LDA to build up a Bayesian generative model, assigning each word a weight of related topics (e.g. adjectives, locations). Features obtained from LDA will be included in our multilevel CAR regression model. 
+To carry out text analysis on names of listings, we first conducted a detailed text cleaning and applied Porter's stemmer algorithm to merge the words with the same root. Then we apply Latent Dirichlet Allocation [@blei2003latent] to explore the latent topics. By assigning each word a weight of related topics (e.g. adjectives, locations), we extracted features from the listings' names and included them to multilevel CARBayes model. In addition, we conducted word frequency analysis for different boroughs, different levels of price and use wordcloud to visualize the results.
+
 
 #### 3. Results
 ##### 3.1 Exploratory Data Analysis
-Figures \ref{fig:mapprice},\ref{fig:mappop},\ref{fig:maptraffic} suggest a clear spatial structure for price, popularity and traffic. Most high-priced listings are located in midtown and downtown Manhattan, while some of them also lie in the part in Brooklyn that is closed to. Similar pattern is discovered for traffic. Most popular neighborhood locates around LGA airport. Figure \ref{fig:roomtype4} shows a significant heterogeneity across neighborhoods and boroughs. In addition, Figures \ref{fig:roomtype1},\ref{fig:roomtype2} demonstrate that the room type matters for price but not for popularity. We can also see the heterogeneity of room type across boroughs/neighborhoods as shown in Figure. A Pearson's Chi-squared test (p-value < 2.2e-16) is conducted to further support the conclusion. Figure \ref{fig:night,fig:night1} suggest a non-linear effect on price/popularity. 
+Figures \ref{fig:mapprice},\ref{fig:mappop},\ref{fig:maptraffic} suggest a clear spatial structure for price, popularity and traffic. Most high-priced listings are located in midtown and downtown Manhattan, while some of them also lie in the part in Brooklyn that is closed to Manhattan. Similar pattern is discovered for traffic. Most popular neighborhood locates around LGA airport. Figures \ref{fig:roomtype1},\ref{fig:roomtype2} demonstrate that the room type matters for price but not for popularity. We can also see the heterogeneity of room type across boroughs/neighborhoods as shown in Figure \ref{fig:roomtype4}. A Pearson's Chi-squared test (p-value < 2.2e-16) is conducted to further support the existence of heterogeneity. Figure \ref{fig:night,fig:night1} suggest a non-linear effect on price/popularity. 
 
-##### 3.2 Data Preprocessing and Missing data manipulation
+##### 3.2 Data Preprocessing
 
-Based on the results from EDA, we consider the following data preprocessing. We remove 11 listings with price equal to 0. We impute 0 for `reviews_per_month` for 10052 listings with NA value. We categorize the `minimum_night` into 5 groups by the first three days and weeks. We consider the logarithm transformation for the response variable `price` and `reviews_per_month`. In addition, we incorporate shape files for neighbourhoods in New York \footnote{<https://data.cityofnewyork.us/City-Government/Neighborhood-Tabulation-Areas-NTA-/cpf4-rkhq>} and reallocate the listings' neighborhood based on the latitude and longitude. By introducing new data, we are able to obtain the adjacency matrix of neighborhoods in New York. To account for the heterogeneity of spatial effects across listings within the same neighborhood, we introduce a new predictor which is the logarithm of distance from a listing to the closest metro\footnote{Locations of metro stations: <https://data.cityofnewyork.us/Transportation/Subway-Stations/arq3-7z49>}.
-
-For text cleaning, we first preprocess the listings' names by transforming them to lower case and removing non-informative characters such as punctuations, stopwords, whitespace, numbers. Then we apply Porter's stemmer algorithm [@porter2001snowball] for word normalization, allowing for extracting all the common roots of informative words. 
+We remove 11 listings with price equal to 0 and impute 0 for `reviews_per_month` for 10052 listings with NA value. We consider the logarithm transformation for the response variable `price` and `reviews_per_month`. The choice of predictors are based on the results from EDA. Specially, we categorize the `minimum_night` into 5 groups by the first three days and weeks accounting for the nonlinear association. To obtain the adjacency matrix of neighborhoods in New York In addition, we incorporate shape files for neighbourhoods in New York \footnote{<https://data.cityofnewyork.us/City-Government/Neighborhood-Tabulation-Areas-NTA-/cpf4-rkhq>} and reallocate the listings' neighborhood based on the latitude and longitude. To account for the heterogeneity of spatial effects across listings within the same neighborhood, we introduce a new predictor which is the logarithm of distance from a listing to the closest metro\footnote{Locations of metro stations: <https://data.cityofnewyork.us/Transportation/Subway-Stations/arq3-7z49>}. For text cleaning, we first preprocess the listings' names by transforming them to lower case and removing non-informative characters such as punctuations, stopwords, whitespace, numbers. Then we apply Porter's stemmer algorithm [@porter2001snowball] for word normalization, allowing for extracting all the common roots of informative words. 
 
 ##### 3.3 Main Results
 
@@ -76,9 +74,8 @@ The availability_365 variable has zero-valued observations which may correspond 
 
 Our model using the imputed data had indistinguishable AIC with our model without imputed data. As a result, we choose to use the original dataset and in future work, explore missingness of availability_365 further.  
 
-#### 4. Answers to Questions
 
-See \ref{fig:phiprice}\ref{fig:phipop}
+[The map for neighborhoods' effect cite these two:\ref{fig:phiprice}\ref{fig:phipop}]
 
 #### 5. Discussion
 
@@ -340,6 +337,27 @@ WAIC  & 74803   & 75370     & 78011        & 75297   & 80749 & 75881          \\
 \label{table:2}
 \end{table}
 
+##### Latent Dirichlet Allocation
+
+\begin{itemize}
+\item Terms:
+  \begin{itemize}
+  \item Corpus $D = \{\boldsymbol{w}_1, \boldsymbol w_2, ..., \boldsymbol w_M\}$
+  \item Doument $\boldsymbol w = \{w_1, w_2, ..., w_N\}$
+  \item Word $w_i \in \{1,...,V\}$, V is total number of unique words.
+  \end{itemize}
+\item LDA Model:\\
+       \ \ For all document $\boldsymbol w$ in $D$:\\
+      \ \  \ \  1. $N\sim \text{Poisson} (\xi)$\\
+      \ \ \ \   2. $\theta\sim \text{Dir}(\alpha)$\\
+      \ \ \ \ 3. For word $w_n$ $(n=1,...,N)$ \\
+      \ \ \ \ \ \ (a) choose a topic $z_n|\theta \sim \text{Multinomial}(\theta)$\\
+      \ \ \ \ \ \ (b) choose a word $w_n|z_n, \beta \sim \text{Multinomial}(\beta_{z_n})$
+\end{itemize}
+
+```{r ldaa, echo=FALSE,  out.width = '50%', fig.align='center'}
+knitr::include_graphics("/Users/yunranchen/GoDuke/20Spring/STAT723CaseStudy/Case-Study-2-team-4/LDA2.png")
+```
 
 
 
