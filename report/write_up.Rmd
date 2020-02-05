@@ -3,11 +3,11 @@ title: "Patterns of Airbnb Listings in NYC"
 author: "Frances Hung, Yunran Chen, Keru Wu"
 fontsize: "11pt"
 output:
-  pdf_document: 
-        latex_engine: xelatex
   html_document:
     keep_md: yes
     fig_caption: TRUE
+  pdf_document: 
+        latex_engine: xelatex
 urlcolor: blue
 linkcolor: blue
 bibliography: bibliography.bib
@@ -50,11 +50,12 @@ To carry out text analysis on names of listings, we first conducted a detailed t
 
 #### 3. Results
 ##### 3.1 Exploratory Data Analysis
-Figures \ref{fig:mapprice},\ref{fig:mappop},\ref{fig:maptraffic} suggest a clear spatial structure for price, popularity and traffic. Most high-priced listings are located in midtown and downtown Manhattan, while some of them also lie in the part in Brooklyn that is closed to Manhattan. Similar pattern is discovered for traffic. Most popular neighborhood locates around LGA airport. Figures \ref{fig:roomtype1},\ref{fig:roomtype2} demonstrate that the room type matters for price but not for popularity. We can also see the heterogeneity of room type across boroughs/neighborhoods as shown in Figure \ref{fig:roomtype4}. A Pearson's Chi-squared test (p-value < 2.2e-16) is conducted to further support the existence of heterogeneity. Figure \ref{fig:night,fig:night1} suggest a non-linear effect on price/popularity. 
+
+Initial data exploration suggests a clear spatial structure for price, popularity, and traffic (Figures \ref{fig:mapprice},\ref{fig:mappop},\ref{fig:maptraffic}). High-priced listings are concentrated in midtown/downtown Manhattan with some spread into the part of Brooklyn closest to Manhattan; traffic follows a similar pattern. In contrast, most popular neighborhoods are located around the LGA airport. Room types appear to be strongly correlated with price, but not popularity (Figures \ref{fig:roomtype1},\ref{fig:roomtype2}). They also seem to be heterogeneous across boroughs and neighborhoods (Figure \ref{fig:roomtype4}), and we corroborate this with a Pearson's Chi-squared test (p-value < 2.2e-16). Our graphs suggest a non-linear effect of room type on price/popularity (Figure \ref{fig:night,fig:night1}).
 
 ##### 3.2 Data Preprocessing
 
-We remove 11 listings with price equal to 0 and impute 0 for `reviews_per_month` for 10052 listings with NA value. We consider the logarithm transformation for the response variable `price` and `reviews_per_month`. The choice of predictors are based on the results from EDA. Specially, we categorize the `minimum_night` into 5 groups by the first three days and weeks accounting for the nonlinear association. To obtain the adjacency matrix of neighborhoods in New York In addition, we incorporate shape files for neighbourhoods in New York \footnote{<https://data.cityofnewyork.us/City-Government/Neighborhood-Tabulation-Areas-NTA-/cpf4-rkhq>} and reallocate the listings' neighborhood based on the latitude and longitude. To account for the heterogeneity of spatial effects across listings within the same neighborhood, we introduce a new predictor which is the logarithm of distance from a listing to the closest metro\footnote{Locations of metro stations: <https://data.cityofnewyork.us/Transportation/Subway-Stations/arq3-7z49>}. For text cleaning, we first preprocess the listings' names by transforming them to lower case and removing non-informative characters such as punctuations, stopwords, whitespace, numbers. Then we apply Porter's stemmer algorithm [@porter2001snowball] for word normalization, allowing for extracting all the common roots of informative words. 
+We remove 11 listings with price equal to 0 and impute 0 for `reviews_per_month` for 10052 listings with NA values since they correspond to listings with zero-valued `number_of_reviews`. To improve scaling, we use a logarithm transformation for the response variables `price` and `reviews_per_month`. The choice of predictors are based on the results from EDA. Specially, we categorize the `minimum_night` into 5 groups by the first three days and weeks accounting for the nonlinear association. To obtain the adjacency matrix of neighborhoods in New York In addition, we incorporate shape files for neighbourhoods in New York \footnote{<https://data.cityofnewyork.us/City-Government/Neighborhood-Tabulation-Areas-NTA-/cpf4-rkhq>} and reallocate the listings' neighborhood based on the latitude and longitude. To account for the heterogeneity of spatial effects across listings within the same neighborhood, we introduce a new predictor which is the logarithm of distance from a listing to the closest metro\footnote{Locations of metro stations: <https://data.cityofnewyork.us/Transportation/Subway-Stations/arq3-7z49>}. For text cleaning, we first preprocess the listings' names by transforming them to lower case and removing non-informative characters such as punctuations, stopwords, whitespace, numbers. Then we apply Porter's stemmer algorithm [@porter2001snowball] for word normalization, allowing for extracting all the common roots of informative words. 
 
 ##### 3.3 Main Results
 
