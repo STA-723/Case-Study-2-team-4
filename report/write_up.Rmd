@@ -22,7 +22,7 @@ header-includes:
 
 ##### Abstract
 
-Airbnb home rental listings vary in price and popularity; are there reasons why? We apply a multilevel conditional autoregressive Bayesian model to capture association between certain rental characteristics (including neighbourhood location) and listing price/popularity in NYC. Room type and minimum nights required are the most influential factors for price and popularity respectively. Adjusting for influential factors, Midtown South in Manhattan and East Elmhurst (close to LaGuardia Airport) in Queens are the most expensive and the most popular neighbourhoods respectively. With respect to a balance between price and popularity, Yorkville in Manhattan is the most lucrative host neighborhood. Text analysis suggests including location, room type and positive adjectives in names of listings.
+Airbnb home rental listings vary in price and popularity, and it is natural to explore reasons for this variance. We apply a multilevel conditional autoregressive Bayesian model to capture association between certain Airbnb rental characteristics (including neighbourhood location) and listing price/popularity in NYC. Room type and minimum nights required are the most influential factors for price and popularity respectively. Adjusting for influential factors, Midtown South in Manhattan and East Elmhurst (close to LaGuardia Airport) in Queens are the most expensive and the most popular neighbourhoods respectively. With respect to a balance between price and popularity, Yorkville in Manhattan is the most lucrative host neighborhood. Text analysis suggests including location, room type and positive adjectives in names of listings.
 
 #### 1. Introduction
 
@@ -59,7 +59,7 @@ We remove 11 listings with price equal to 0 and impute 0 for listings with NA `r
 
 ##### 3.3 Main Results
 
-From our model coefficient estimation (Fig. \ref{fig:car1-sum}), our multilevel CAR model on price demonstrates the following patterns (numbers in parentheses are medians of corresponding coefficients). Entire rooms (0) are more expensive than private ones (-0.7), which in turn are more expensive than shared ones (-1.1). Manhattan (0.57) is the most expensive borough, and the Bronx (0) the cheapest. Availability (0.12) is positively correlated to price while reviews per month (-0.0 CHECK THIS) is negatively correlated. In addition, more strict requirements on minimum nights and longer distance to metro stations result in lower price (-0.005). Room type is the most influential factor since compared to removing other covariates, our wAIC increases the most when it is removed from the full price model (Table \ref{table:1})
+From our model coefficient estimation (Fig. \ref{fig:car1-sum}), our multilevel CAR model on price demonstrates the following patterns (numbers in parentheses are medians of corresponding coefficients). Entire rooms (0) are more expensive than private ones (-0.7), which in turn are more expensive than shared ones (-1.1). Manhattan (0.57) is the most expensive borough, and the Bronx (0) the cheapest. Availability (0.12) is positively correlated to price while reviews per month is negatively correlated. In addition, more strict requirements on minimum nights and longer distance to metro stations result in lower price. Room type is the most influential factor since compared to removing other predictors, our wAIC increases the most when it is removed from the full price model (Table \ref{table:1})
 
 Our model on popularity (Fig. \ref{fig:car2-sum}) yields mostly similar correlation signs but is different as follows. Compared to the other four boroughs, Queens (0.13) has the highest average review rate. Availability (0.15) still has a positive effect on popularity, while higher price (-0.12) corresponds to less popular listings. Moreover, metro distance is no longer significant for predicting popularity. Minimum nights is the most influential factor since our wAIC increases most when it is removed from the full popularity model (Table \ref{table:2})
 
@@ -452,6 +452,19 @@ text_top_terms %>%
 knitr::include_graphics("LDA.jpeg")
 ```
 
+```{r MICE prep, eval=FALSE}
+#change zeros to NA's, fix bound on availability
+AB_NA<-dat %>% 
+  mutate(availability_365=ifelse(availability_365==0,NA,availability_365)) %>%
+  mutate(availability_365=ifelse(availability_365>365,365,availability_365)) %>%
+  dplyr::select(-host_id,-host_name,-id,-last_review,-name) 
+```
 
+
+```{r MICE,eval=FALSE}
+mice_data<-mice(AB_NA,m=4)
+densityplot(mice_data)
+stripplot(mice_data,availability_365~last_year_rev+rmtype_number+neighborhood_grp_number+neighborhood_number+price+reviews_per_month,pch=18,cex=1)
+```
 
 #### References
