@@ -22,30 +22,30 @@ header-includes:
 
 ##### Abstract
 
-Airbnb home rental listings vary in price and popularity. We apply multilevel conditional autoregressive Bayesian model to capture assoication between certain rental characteristics (including neighbourhood location) and listing price/popularity in NYC. Room type and minimum night are the most influential factors for price and popularity respectively. Adjusting all the influential factors, Midtown South in Manhattan and East Elmhurst (close to LaGuardia Airport) in Queens are the most most expensive one and the most popular neighbourhood respectively. Considering a balance between price and popularity, Yorkville in Manhattan is the most lucrative host neighborhood. Text analysis suggest including location, room type and positive adjectives in the name of listings.
+Airbnb home rental listings vary in price and popularity; are there reasons why? We apply a multilevel conditional autoregressive Bayesian model to capture association between certain rental characteristics (including neighbourhood location) and listing price/popularity in NYC. Room type and minimum nights required are the most influential factors for price and popularity respectively. Adjusting for influential factors, Midtown South in Manhattan and East Elmhurst (close to LaGuardia Airport) in Queens are the most expensive and the most popular neighbourhoods respectively. With respect to a balance between price and popularity, Yorkville in Manhattan is the most lucrative host neighborhood. Text analysis suggests including location, room type and positive adjectives in names of listings.
 
 #### 1. Introduction
 
-Airbnb is a platform provides more personalized home rentals for travelers compared with hotels. Our data observations consist of 48,895 individual Airbnb listings in New York City. Each listing observation contains the following variables: host ID, neighbourhood group, neighbourhood, longitude/latitude, available days of the listing in a year, room type, price, minimum nights required, number of reviews, and reviews per month. 
+Airbnb is a platform providing home rentals for travelers. Our observed data consists of 48,895 individual Airbnb listings in New York City. Each listing observation contains the following variables: host ID, neighbourhood group, neighbourhood, longitude/latitude, available days of the listing in a year, room type, price, minimum nights required, number of reviews, and reviews per month. 
 
-From the perspective of a host, we are interested in exploring the patterns in price and popularity. Specifically, we are interested in (1) quantifying the influential factors in the price/popularity and evaluating their influence (2) exploring the most valuable neighborhoods with adjusting the influential factors (3) choose a location and set a price for the listing (4) name the listing. 
+From the perspective of a host, we are interested in exploring the patterns in price and popularity. Specifically, we are interested in (1) quantifying the influential factors in the price/popularity and evaluating their influence (2) finding the most valuable neighborhoods adjusted for the influential factors (3) optimally choosing a location and a price for the listing (4) optimally naming the listing. 
 
 #### 2. Materials and Methods
 
-Since the price and popularity are strongly related to the location of listings (Fig. \ref{fig:mapprice}, \ref{fig:mappop}) and neighboods provides a natural boundary for spatial characteristics of listings, we consider a multilevel conditional autoregressive Bayesian model (CARBayes)[@lee2013carbayes] based on neighbood units as follows:
+Since the price and popularity are strongly related to the location of listings (Fig. \ref{fig:mapprice}, \ref{fig:mappop}), and neighborhoods provide a natural boundary for spatial characteristics of listings, we consider a multilevel conditional autoregressive Bayesian model (CARBayes)[@lee2013carbayes] based on neighborhood units as follows:
 $$ \begin{aligned}
  	Y_{kj}|\mu_{kj} \sim f(y_{kj}|\mu_{kj}, \nu^2), \ \ \ &k= \text{neighbourhood}
 =1,...,K\\
   &j=\text{listings}=1,...,m_k \end{aligned}$$
 $$g(\mu_{kj})=x_{kj}^T\beta + \psi_{kj}$$
 $$\psi_{kj}=\phi_k + \zeta_{kj}$$,
-where $\beta$ represents the potential effect of predictor $x_{kj}$, with a prior $\beta \sim N(\mu_\beta, \Sigma_\beta)$. $\phi_k$ and $\zeta_{kj}$ represents the neighbourhoods' effect and individual effect. We consider a autoregressive prior for $\phi_k$:
+where $\beta$ represents the potential effect of predictor $x_{kj}$, with a prior $\beta \sim N(\mu_\beta, \Sigma_\beta)$. $\phi_k$ and $\zeta_{kj}$ represents the neighbourhood effect and individual effect respectively. We consider an autoregressive prior for $\phi_k$:
 $$\phi_k|\phi_{-k} \sim N\Big(\frac{\rho \sum_{l=1}^K w_{kl}\phi_j}{\rho \sum_{j=1}^K w_{kl}+1-\rho}, \frac{\tau^2}{\rho\sum_{j=1}^Kw_{kl}+1-\rho}\Big)$$
-where $w_{kl}$ is known from data with $w_{kl}=1$ denotes neighbourhood $k$ is adjacent to neighbourhood $l$, and $0$ otherwise; $\rho\sim U(0,1)$ capture the relation between neighbourhood effects. This prior captures the spatial structure among neighbourhoods for each neighborhoods' effect is centered at the weighted sum of the effects from its neighbors.
+where $w_{kl} \in \{0,1\}$ is known from data and $w_{kl}=1$ denotes that neighbourhood $k$ is adjacent to neighbourhood $l$. $\rho\sim U(0,1)$ captures the relation between neighbourhood effects. In summary, this prior captures the spatial structure among neighbourhoods; each neighborhood's effect is centered at the weighted sum of effects from its neighbors.
 
-We consider `log(price)` and `log(1+review_per_month)`(popularity) as response variable and model them separately. We include room type, price, minimum nights required, price/popularity as predictors based on EDA results. Additionally, we incorporate the logarithm distance from a listing to the nearest metro station to account for the heterogeneity of individual spatial effect within the same neighborhood. Also, we extracted features from names of listings by applying Latent Dirichlet Allocation (LDA) [@blei2003latent] model and introduced these features as predictors. 
+We consider `log(price)` and `log(1+review_per_month)`(popularity) as response variables and model them separately. We include room type, price, minimum nights required, and popularity/price respectively as predictors based on EDA results. Additionally, we incorporate the logarithm distance from a listing to the nearest metro station to account for the heterogeneity of individual spatial effects within the same neighborhood. We extracted features from names of listings by applying Latent Dirichlet Allocation (LDA) [@blei2003latent] model and introduced these features as predictors. 
 
-To carry out text analysis on names of listings, we first conducted a detailed text cleaning and applied Porter's stemmer algorithm to merge the words with the same root. Then we apply Latent Dirichlet Allocation [@blei2003latent] to explore the latent topics. By assigning each word a weight of related topics (e.g. adjectives, locations), we extracted features from the listings' names and included them to multilevel CARBayes model. In addition, we conducted word frequency analysis for different boroughs, different levels of price and use wordcloud to visualize the results.
+To carry out text analysis on names of listings, we first conducted a detailed text cleaning and applied Porter's stemmer algorithm to merge the words with the same root. Then we applied Latent Dirichlet Allocation [@blei2003latent] to explore the latent topics. By assigning each word a weight of related topics (e.g. adjectives, locations), we extracted features from the listings' names and included them in our multilevel CARBayes model. In addition, we conducted word frequency analysis for different boroughs and different levels of price and used wordclouds to visualize the results.
 
 
 #### 3. Results
@@ -75,11 +75,11 @@ Our model using the imputed data had indistinguishable AIC with our model withou
 
 #### 5. Discussion
 
-Our multilevel CAR Bayesian model successfully discovers patterns of listings addressing both neighborhood level and individual level potential effects. We capture the spatial information at the neighborhood levels, which facilitates interpretation as well as eases the computation. However, the heterogeneity across individual spatial information within the same neighborhood may not be well caputured. To address the heterogeneity at the individual-level, a hierachical point-reference spatial model may be a better choice. 
+Our multilevel CAR Bayesian model successfully discovers patterns of listings addressing both neighborhood level and individual level potential effects. We capture the spatial information at only the neighborhood levels, which facilitates interpretation as well as eases computation. However, the heterogeneity across individual spatial information within the same neighborhood may not be well caputured. To address the heterogeneity at the individual-level, a hierachical point-reference spatial model may be a better choice. 
 
-We assume linear relationships between response variable and predictors such as availability and distance to the closest metro station. We consider categorize minimum night to account for the nonlinear effect we discovered in EDA. To better capture the nonlinear relationship and obtain a more flexible model, a nonlinear model using spline regression such as GAM would be more reasonable. 
+We assume linear relationships between response variables and predictors such as availability and distance to the closest metro station. We consider categorizing minimum night to account for the nonlinear effect we discovered in EDA. To better capture the nonlinear relationship and obtain a more flexible model, a nonlinear model using spline regression such as GAM would be more reasonable. 
 
-Another critical part is to impute missing data. Although MICE doesn't perform better than imputing with 0, discovering other imputation methods could be helpful. Moreover, different hosts have different number of listings, we can further try approaches that accounts for their influence (e.g. random effects).
+Another critical part of this analysis imputing missing data. Although MICE doesn't perform better than imputing with 0, exploring other imputation methods could be helpful. Moreover, since different hosts have different numbers of listings, we can further try approaches that account for their influence (e.g. random effects).
 
 \newpage
 
